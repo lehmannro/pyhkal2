@@ -10,12 +10,6 @@ def send(self, message, dest=None):
     for t in hooks['send'].values():
         t(message, dest)
 
-def get(*args):
-    return database.get(*args)
-
-def put(path, obj):
-    database.put(path, obj)
-
 def run():
     pass
     #+ config parsen
@@ -73,6 +67,3 @@ class Origin(object):
 #   channel (user, channel)
 #   dcc (user)
 #   web (user)
-
-if __name__ == '__main__':
-    run()
