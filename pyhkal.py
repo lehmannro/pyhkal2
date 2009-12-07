@@ -5,16 +5,6 @@ commands = {}
 dataStorage = ...
 transport = ...
 
-# -
-# Schichtenstruktur
-# -
-# Transport (IRC, Web, SMS, blaa)
-# LogicAccess/Bot +---- --- -- -  -   -
-#                 | Logic (Module)
-#                 +---- --- -- -  -   -
-# DataAccess (Serialisierung)    ---     ConfigurationAccess
-# CouchDB! :-)                           YAML/JSON/not-pickle
-
 if 1:
     def send(self, message, dest=None):
         """dest ist standardmäßig `origin` der vorher ausgeführten Funktion

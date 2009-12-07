@@ -1,0 +1,22 @@
+digraph {
+label="PyHKAL architectural chart"; labelloc=t;
+edge [dir=both];
+transport [label="{{IRC|Web|SMS|...}|Twisted Reactor|Transport}" shape=record];
+transport -> modules;
+
+subgraph cluster_modules {
+    label="PyHKAL\npyhkal.py";
+    labelloc=b;
+    modules [label="Modules" shape=note peripheries=3];
+}
+
+modules:w -> database:nw;
+modules:e -> config:ne;
+
+database [label="Database\ndatabase.py" shape=egg];
+db [label="CouchDB" shape=box3d]
+database -> db;
+config [label="Configuration\nconfig.py" shape=egg];
+cfg [label="YAML" shape=box3d];
+config -> cfg;
+}
