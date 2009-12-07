@@ -1,41 +1,38 @@
 #!/usr/bin/env python
+# encoding: utf-8
 
 commands = {}
 # dict of str -> (callback, dict of str -> (callback, dict ...))
-dataStorage = ...
-transport = ...
 
-if 1:
-    def send(self, message, dest=None):
-        """dest ist standardmäßig `origin` der vorher ausgeführten Funktion
-        """
-        for t in hooks['send'].values():
-            t(message, dest)
+def send(self, message, dest=None):
+    """dest ist standardmäßig `origin` der vorher ausgeführten Funktion
+    """
+    for t in hooks['send'].values():
+        t(message, dest)
 
-    def get(self, ...):
-        return database.get(...)
+def get(*args):
+    return database.get(*args)
 
-    def put(self, *args):
-        """put(path, ..., obj)"""
-        *path, obj = args
-        database.put(...)
+def put(path, obj):
+    database.put(path, obj)
 
-    def run(self):
-        #+ config parsen
-        #+ module laden
-        #+ irc/web starten?
+def run():
+    pass
+    #+ config parsen
+    #+ module laden
+    #+ irc/web starten?
 
 def dispatch_event(event, origin, args):
+    pass
     #+ event dispatch
 
-def dispatch_command(origin, args):
+def dispatch_command(origin, command, *args):
     # Erwartet den Command in Listen-Form:
     # z.B.: ['rep', '-svn', 'install', 'stfumod']
     # Andere Transportschichten müssen dieses Format entsprechend einhalten.
     #+ subcommand dispatch
     #   !rep
     #     -svn ('install', 'stfumod')
-    command, *args = args
     if command in commands:
         commands[command](origin, args)
 
