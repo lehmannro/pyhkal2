@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from pyhkal.shopping import buy
+from pyhkal.memo import remember, read as read_memo
+
 commands = {}
+modules = []
 # dict of str -> (callback, dict of str -> (callback, dict ...))
 
-def send(self, message, dest=None):
-    """dest ist standardmäßig `origin` der vorher ausgeführten Funktion
-    """
-    for t in hooks['send'].values():
-        t(message, dest)
-
-def run():
-    pass
+def run(memo):
+    read_memo(memo)
+    for mod in remember("modules"):
+        buy(mod)
     #+ config parsen
     #+ module laden
     #+ irc/web starten?
+
 
 def dispatch_event(event, origin, args):
     pass
@@ -40,14 +41,6 @@ def hi(**meta):
     mod = sys._stack_frame().f_previous #+ fixme
     mod.NAME = meta['name']
     mod.__metadata__ == meta #+ stack manipulation :-)
-
-def load_module(mod):
-    return execfile(mod)
-
-def unload_module(mod):
-    for command, func in commands.items():
-        if func.__file__ == mod:
-            del commands[command]
 
 def register(function):
     name = function.__name__

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from pyhkal.main import run
+from pyhkal.engine import run
 
 if __name__ == '__main__':
-    run()
+    import sys
+    run(sys.argv[1])

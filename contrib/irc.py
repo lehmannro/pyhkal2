@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 hi(
     name = "irc",
     version = "0.1",
@@ -15,11 +17,11 @@ def send_message(message, dest):
             socket.send("PRIVMSG %s :%s" % (d, message))
 
 
-while 1: #+ async
+while 0: #+ async
     if x.match("PRIVMSG * :!*"): #+ prefix aus der config laden
         origin, command = x.matches()
         #+ in WebMod: x.split("/")
         dispatch_command(IRCChannel(origin), command)
     else:
-        _, event, *args = x.split()
+#        _, event, *args = x.split()
         dispatch_event(event, args)
