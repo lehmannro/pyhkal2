@@ -24,7 +24,7 @@ def karma_add(origin, *args):
     "increases karma by one"
     subject = args[0]
     karma = bot.get("karma", name=subject) + 1
-    bot.update("karma", name=subject, karma)
+    bot.update("karma", name=subject, value=karma)
     bot.send("%s hat nun ein Karma von %d" % (subject, karma))
     bot.send("ACHTUNG, KARMA!", dest=user.admins + [origin.public])
 
@@ -34,5 +34,5 @@ def anderer_namespace(origin, *args):
 
 @hook("shutdown")
 def save():
-    for chan in bot.get(NAME, ...):
+    for chan in bot.get(NAME, "channels"):
         bot.setmode(chan, "-m")

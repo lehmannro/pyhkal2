@@ -5,6 +5,7 @@
 """
 
 import os.path
+import pyhkal.api
 
 SHOPPING_MALL = os.path.abspath(os.path.join(os.path.dirname(__file__),
     "..", "contrib"))
@@ -12,7 +13,8 @@ SHOPPING_MALL = os.path.abspath(os.path.join(os.path.dirname(__file__),
 def buy(what):
     if what == "love":
         raise SystemExit("Can't Buy Me Love")
-    return execfile(os.path.join(SHOPPING_MALL, what+".py"))
+    return execfile(os.path.join(SHOPPING_MALL, what+".py"),
+        pyhkal.api.__dict__)
 
 def revoke(what):
     pass

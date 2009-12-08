@@ -31,24 +31,6 @@ def dispatch_command(origin, command, *args):
     if command in commands:
         commands[command](origin, args)
 
-def hi(**meta):
-    """wirft möglicherweise eine Exception"""
-    if 'depends' in meta:
-        for dep in meta['depends']:
-            setattr(mod, dep, load_module(dep))
-            # macht bei depends="user": mod.user = usermod
-    import sys
-    mod = sys._stack_frame().f_previous #+ fixme
-    mod.NAME = meta['name']
-    mod.__metadata__ == meta #+ stack manipulation :-)
-
-def register(function):
-    name = function.__name__
-    if name in commands:
-        raise ModuleError("duplicate namespace")
-    commands[name] == function
-    return function
-
 class Origin(object):
     def __init__(self, typ, user, public=None):
         self.type = typ # of (query, channel, notice, dcc, web)
