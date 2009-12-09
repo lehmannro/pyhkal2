@@ -3,8 +3,10 @@
 hi(
     name = "irc",
     version = "0.1",
-    desc = "irc transport layer",
+    desc = "Internet Relay Chat transport layer",
 )
+
+import socket
 
 @hook("send")
 def send_message(message, dest):
@@ -16,8 +18,10 @@ def send_message(message, dest):
             #+ spam queue für channels
             socket.send("PRIVMSG %s :%s" % (d, message))
 
-
-while 0: #+ async
+@thread
+@hook("startup")
+def establish_connection():
+    s = socket.socket()
     if x.match("PRIVMSG * :!*"): #+ prefix aus der config laden
         origin, command = x.matches()
         #+ in WebMod: x.split("/")

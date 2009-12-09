@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import collections
 import pyhkal.shopping as shopping
 import pyhkal.davenport as davenport
 
+listeners = collections.defaultdict(list)
 commands = {}
 modules = []
 # dict of str -> (callback, dict of str -> (callback, dict ...))
@@ -13,12 +15,13 @@ def run(location=None):
     davenport.use(location)
     for mod in davenport.remember("modules"):
         shopping.buy(mod)
-    #+ config parsen
-    #+ module laden
-    #+ irc/web starten?
+    dispatch_event("startup")
+    print listeners
 
+def add_listener(event, listener):
+    listeners[event].append(listener)
 
-def dispatch_event(event, origin, args):
+def dispatch_event(event, *args):
     pass
     #+ event dispatch
 

@@ -1,8 +1,10 @@
 # encoding: utf-8
 
+import functools
 import inspect
 from distutils.version import LooseVersion
 import pyhkal.shopping
+import pyhkal.engine
 
 def hi(**meta):
     """
@@ -15,8 +17,14 @@ def hi(**meta):
     mod['NAME'] = meta['name']
     mod['__metadata__'] = meta #+ stack manipulation :-)
 
-def hook(*event):
-    return lambda f:f
+def hook(event, *args):
+    def wrapper(f):
+        pyhkal.engine.add_listener(event, f)
+        return f
+    return wrapper
+
+def thread(func):
+    return func
 
 def register(command):
     return lambda f:f
@@ -25,7 +33,6 @@ def register(command):
         raise ModuleError("duplicate namespace")
     commands[name] == function
     return function
-
 
 def send(message, dest=None):
     """dest ist standardmäßig `origin` der vorher ausgeführten Funktion
