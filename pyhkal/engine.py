@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from pyhkal.shopping import buy
-from pyhkal.memo import remember, read as read_memo
+import pyhkal.shopping as shopping
+import pyhkal.davenport as davenport
 
 commands = {}
 modules = []
 # dict of str -> (callback, dict of str -> (callback, dict ...))
 
-def run(memo):
-    read_memo(memo)
-    for mod in remember("modules"):
-        buy(mod)
+def run(location=None):
+    """Run PyHKAL on a CouchDB available at `location`."""
+    davenport.use(location)
+    for mod in davenport.remember("modules"):
+        shopping.buy(mod)
     #+ config parsen
     #+ module laden
     #+ irc/web starten?
