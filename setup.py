@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-import pyhkal
+#import pyhkal
 
 setup(name='pyhkal',
 #      version=pyhkal.__version__,

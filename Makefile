@@ -1,11 +1,10 @@
-PYTHON = python
 VIRTUALENV = ./var
 SOURCES = $(wildcard pyhkal/*.py)
 
 .PHONY: run virtualenv clean
 
 run: virtualenv
-	$(VIRTUALENV)/bin/python -mpyhkal example.yaml
+	$(VIRTUALENV)/bin/python -mpyhkal
 
 virtualenv: $(VIRTUALENV) $(VIRTUALENV)/lib/python2.5/site-packages/pyhkal
 $(VIRTUALENV):
@@ -17,3 +16,5 @@ $(VIRTUALENV)/lib/python2.5/site-packages/pyhkal: $(SOURCES)
 
 clean:
 	rm -rf "$(VIRTUALENV)"
+	rm -rf "build/"
+	rm -f pip-log.txt
