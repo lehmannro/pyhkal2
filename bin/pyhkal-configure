@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+
+import couchdb
+import yaml
+from pyhkal.davenport import REMEMBER as UUID, DATABASE
+
+def yaml2couch(path, couch):
+    config = yaml.safe_load(open(path))
+    db = couchdb.Server(couch)[DATABASE]
+    old = db[UUID]
+    old.update(config)
+    db[UUID] = old
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) != 3:
+        print "usage: %s pyhkal.yaml http://couchdb:5984/" % sys.argv[0]
+        sys.exit(1)
+    yaml2couch(*sys.argv[1:3])
