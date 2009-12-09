@@ -9,6 +9,7 @@ The davenport described herein is both, a sofa and a desk.
 """
 
 DATABASE = 'pyhkal'
+REMEMBER = 'config'
 
 import couchdb.client
 
@@ -31,7 +32,7 @@ def remember(breadcrumbs):
     morning. For some weird reason, you need a sofa to remember.
 
     """
-    config = get_by_label("config")
+    config = get_by_label(REMEMBER)
     return reduce(lambda doc, value: doc[value], breadcrumbs.split(), config)
 
 def get_by_label(label):
