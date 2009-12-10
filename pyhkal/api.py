@@ -2,6 +2,7 @@
 
 import functools
 import inspect
+import os.path
 from distutils.version import LooseVersion
 import pyhkal.shopping
 import pyhkal.engine
@@ -9,13 +10,13 @@ import pyhkal.engine
 def hi(**meta):
     """
     """
-    mod = inspect.currentframe().f_back.f_globals
+    frame = inspect.currentframe().f_back
+    mod = frame.f_globals
     if 'depends' in meta:
         for dependency in meta['depends']:
             dep = LooseVersion(dependency).version[0]
             mod[dep] = pyhkal.shopping.buy(dep)
-    mod['NAME'] = meta['name']
-    mod['__metadata__'] = meta #+ stack manipulation :-)
+    mod['__metadata__'] = meta
 
 def hook(event, *args):
     def wrapper(f):
