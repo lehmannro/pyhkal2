@@ -13,7 +13,7 @@ $(VIRTUALENV):
 	$(VIRTUALENV)/bin/pip -q install PyYAML
 	$(VIRTUALENV)/bin/pip -q install couchdb
 $(VIRTUALENV)/lib/python2.5/site-packages/pyhkal: $(SOURCES)
-	$(VIRTUALENV)/bin/python setup.py install --skip-build
+	$(VIRTUALENV)/bin/python setup.py --quiet install
 
 clean:
 	rm -rf "$(VIRTUALENV)"
