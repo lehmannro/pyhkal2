@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 hi(
-    name = "irc",
     version = "0.1",
     desc = "Internet Relay Chat transport layer",
 )

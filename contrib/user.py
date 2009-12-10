@@ -1,5 +1,4 @@
 hi(
-    name = "user",
     version = "0.1beta",
     desc = "user management",
 )

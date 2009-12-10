@@ -1,7 +1,6 @@
 # coding: utf-8
 
 hi(
-    name = "stfu",
     version = "0.1",
     depends = [
       "irc>=0.1",
