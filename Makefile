@@ -1,5 +1,5 @@
 VIRTUALENV = ./var
-SOURCES = $(wildcard pyhkal/*.py)
+SOURCES = $(wildcard pyhkal/*.py) $(wildcard contrib/*.py)
 
 .PHONY: run virtualenv clean
 
