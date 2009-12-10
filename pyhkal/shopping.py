@@ -8,13 +8,25 @@ import os.path
 import pyhkal.api
 
 SHOPPING_MALL = os.path.abspath(os.path.join(os.path.dirname(__file__),
-    "..", "contrib"))
+    "contrib"))
+_modules = set()
+
+class OutOfStock(ImportError): pass
 
 def buy(what):
     if what == "love":
         raise SystemExit("Can't Buy Me Love")
-    return execfile(os.path.join(SHOPPING_MALL, what+".py"),
-        pyhkal.api.__dict__)
+    elif what in _modules:
+        return
+    #+ safeguard jail against ../
+    #+ try ../contrib?
+    #+ try remember("include")
+    #+ try $PYHKALPATH?
+    path = os.path.join(SHOPPING_MALL, what+".py")
+    if not os.path.isfile(path):
+        raise OutOfStock(what)
+    execfile(path, pyhkal.api.__dict__, {'NAME': what})
+    _modules.add(what)
 
 def revoke(what):
     pass
