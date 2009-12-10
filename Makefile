@@ -4,7 +4,8 @@ SOURCES = $(wildcard pyhkal/*.py)
 .PHONY: run virtualenv clean
 
 run: virtualenv
-	$(VIRTUALENV)/bin/python -mpyhkal
+	@cd "$(VIRTUALENV)"; \
+	./bin/python -mpyhkal
 
 virtualenv: $(VIRTUALENV) $(VIRTUALENV)/lib/python2.5/site-packages/pyhkal
 $(VIRTUALENV):
