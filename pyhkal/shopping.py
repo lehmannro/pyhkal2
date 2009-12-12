@@ -7,46 +7,49 @@
 import imp
 import os.path
 import pkgutil
-import runpy
+import sys
 import pyhkal.api
 
-SHOPPING_MALL = os.path.abspath(os.path.join(os.path.dirname(__file__),
-    "contrib"))
-_modules = set()
+SHOPPING_MALL = "contrib"
 
 class OutOfStock(ImportError): pass
 
-class ShoppingMall(pkgutil.ImpImporter):
+class ShoppingMall(object):
+    @staticmethod
+    def get_paths():
+        curdir = os.path.dirname(__file__)
+        #+ safeguard jail against ../
+        reldir = lambda *d: os.path.abspath(os.path.join(curdir, *d))
+        yield reldir(SHOPPING_MALL)
+        yield reldir("..", SHOPPING_MALL)
+        #+ try remember("include")
+        #+ try $PYHKALPATH?
     def find_module(self, fullname, path=None):
         if fullname.startswith('pyhkal:'):
-            name = fullname[len('pyhkal:'):]
-            #+ safeguard jail against ../
-            #+ try ../contrib?
-            #+ try remember("include")
-            #+ try $PYHKALPATH?
-            path = os.path.join(SHOPPING_MALL, name+".py")
-            if not os.path.isfile(path):
-                return None
-            #+ handle failure during module loading (should not happen but better
-            #  safe than sorry). this might be tricky as we'd need to rollback
-            #  all changes to pyhkal.engine
-            return pkgutil.ImpLoader(
-                fullname, open(path), path, (".py", 'r', imp.PY_SOURCE))
-import sys
+            return self
+    def load_module(self, fullname):
+        #+ handle failure during module loading (should not happen but better
+        #  safe than sorry). this might be tricky as we'd need to rollback
+        #  all changes to pyhkal.engine
+        name = fullname[len('pyhkal:'):]
+        self.loader = loader =  pkgutil.ImpLoader(
+                fullname, *imp.find_module(name, list(self.get_paths())))
+        mod = sys.modules.setdefault(fullname, imp.new_module(name))
+        mod.__loader__ = self
+        mod.__dict__.update(pyhkal.api.__dict__)
+        mod.__dict__.update(__name__=name)
+        exec loader.get_code() in mod.__dict__
+        return mod
+
 sys.meta_path.append(ShoppingMall())
 
 def buy(what):
     if what == "love":
         raise SystemExit("Can't Buy Me Love")
-    elif what in _modules:
-        return
-    namespace = {'__module__': what}
+    namespace = dict(__module__=what)
     namespace.update(pyhkal.api.__dict__)
-    namespace = runpy.run_module("pyhkal:%s" % what, namespace)
-    _modules.add(what)
-    namespace['__name__'] += "-" + namespace['__metadata__']['version']
-    mod = imp.new_module("")
-    mod.__dict__.update(namespace)
+    mod = __import__('pyhkal:%s' % what, {}, namespace)
+    mod.__name__ += '-' + mod.__metadata__['version']
     return mod
 
 def revoke(what):
