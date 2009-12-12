@@ -39,6 +39,7 @@ class ShoppingMall(object):
         mod.__dict__.update(pyhkal.api.__dict__)
         mod.__dict__.update(__name__=name)
         exec loader.get_code() in mod.__dict__
+        mod.__name__ += '-' + mod.__metadata__['version']
         return mod
 
 sys.meta_path.append(ShoppingMall())
@@ -46,10 +47,7 @@ sys.meta_path.append(ShoppingMall())
 def buy(what):
     if what == "love":
         raise SystemExit("Can't Buy Me Love")
-    namespace = dict(__module__=what)
-    namespace.update(pyhkal.api.__dict__)
-    mod = __import__('pyhkal:%s' % what, {}, namespace)
-    mod.__name__ += '-' + mod.__metadata__['version']
+    mod = __import__('pyhkal:%s' % what)
     return mod
 
 def revoke(what):
