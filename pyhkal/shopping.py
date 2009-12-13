@@ -31,15 +31,17 @@ class ShoppingMall(object):
         #+ handle failure during module loading (should not happen but better
         #  safe than sorry). this might be tricky as we'd need to rollback
         #  all changes to pyhkal.engine
+        #+ do not neccessarily reset dunder attributes on reload
+        #  (fullname in sys.modules)
         name = fullname[len('pyhkal:'):]
         self.loader = loader =  pkgutil.ImpLoader(
                 fullname, *imp.find_module(name, list(self.get_paths())))
-        mod = sys.modules.setdefault(fullname, imp.new_module(name))
+        mod = sys.modules.setdefault(fullname, imp.new_module(fullname))
         mod.__loader__ = self
         mod.__dict__.update(pyhkal.api.__dict__)
-        mod.__dict__.update(__name__=name)
+        mod.__name__ = fullname
+        mod.__module__ = name
         exec loader.get_code() in mod.__dict__
-        mod.__name__ += '-' + mod.__metadata__['version']
         return mod
 
 sys.meta_path.append(ShoppingMall())
@@ -50,8 +52,8 @@ def buy(what):
     mod = __import__('pyhkal:%s' % what)
     return mod
 
+def renew(what):
+    reload(sys.modules['pyhkal:%s' % what])
+
 def revoke(what):
-    pass
-#    for command, func in commands.items():
-#        if func.__file__ == mod:
-#            del commands[command]
+    del sys.modules['pyhkal:%s' % what]
