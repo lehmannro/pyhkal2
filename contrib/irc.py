@@ -44,12 +44,14 @@ def establish_connection():
                 break
             line = buf[:eolpos]
             if line.startswith("PING :"):
-                send(line.replace("PING :", "PONG "))
+                send(line.replace("PING", "PONG "))
             elif line.startswith(":"):
                 line = line.split()
-                if line[1] == "376":
+                if line[1] == "376": # End of MOTD
                     for channel in remember("irc channels", []):
                         send("JOIN %s" % channel)
+                elif line[1] == "433": # Nickname already in use
+                    send("NICK %s-" % line[3])
             buf = buf[eolpos+2:]
 #    if x.match("PRIVMSG * :!*"): #+ prefix aus der config laden
 #        origin, command = x.matches()
