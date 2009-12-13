@@ -2,10 +2,12 @@
 # encoding: utf-8
 
 import collections
+import weakref
+from _weakrefset import WeakSet
 import pyhkal.shopping as shopping
 import pyhkal.davenport as davenport
 
-listeners = collections.defaultdict(list)
+listeners = collections.defaultdict(WeakSet)
 commands = {}
 modules = []
 # dict of str -> (callback, dict of str -> (callback, dict ...))
@@ -16,13 +18,13 @@ def run(location=None):
     for mod in davenport.remember("modules"):
         shopping.buy(mod)
     dispatch_event("startup")
-    print listeners
 
 def add_listener(event, listener):
-    listeners[event].append(listener)
+    listeners[event].add(listener)
 
 def dispatch_event(event, *args):
-    pass
+    for dispatcher in listeners[event]:
+        dispatcher(*args)
     #+ event dispatch
 
 def dispatch_command(origin, command, *args):
