@@ -6,6 +6,9 @@ import os.path
 from distutils.version import LooseVersion
 import pyhkal.shopping
 import pyhkal.engine
+import pyhkal.davenport as davenport
+
+#+ expose only specially marked up items
 
 def hi(**meta):
     """
