@@ -6,6 +6,9 @@ hi(
 )
 
 DEFAULT_PORT = 6667
+DEFAULT_NICK = "pyhkal"
+DEFAULT_USER = "pyhkal"
+DEFAULT_NAME = "PyHKAL 2.0"
 
 import socket
 
@@ -27,8 +30,11 @@ def establish_connection():
     server = remember("irc server")
     port = remember("irc port", DEFAULT_PORT)
     s.connect((server, port))
-    send("USER pyhkal pyhkal pyhkal :PyHKAL")
-    send("NICK PyHKAL2")
+    nick = remember("irc nickname", DEFAULT_NICK)
+    user = remember("irc username", DEFAULT_USER)
+    name = remember("irc realname", DEFAULT_NAME)
+    send("USER %s * * :%s" % (user, name))
+    send("NICK %s" % nick)
     buf = ""
     while 1:
         buf += s.recv(1024)
