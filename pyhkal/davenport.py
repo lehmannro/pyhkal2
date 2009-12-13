@@ -27,13 +27,20 @@ def use(location=None):
     except couchdb.client.ResourceNotFound:
         _sofa = server.create(DATABASE)
 
-def remember(breadcrumbs):
+_none = object()
+def remember(breadcrumbs, default=_none):
     """Remember that random fact that popped into your head 2 AM in the
     morning. For some weird reason, you need a sofa to remember.
 
     """
     config = get_by_label(REMEMBER)
-    return reduce(lambda doc, value: doc[value], breadcrumbs.split(), config)
+    try:
+        return reduce(lambda doc, value: doc[value],
+                breadcrumbs.split(), config)
+    except KeyError:
+        if default is not _none:
+            return default
+        raise
 
 def get_by_label(label):
     return _sofa[label]
