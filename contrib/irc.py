@@ -33,7 +33,10 @@ def establish_connection():
     nick = remember("irc nickname", DEFAULT_NICK)
     user = remember("irc username", DEFAULT_USER)
     name = remember("irc realname", DEFAULT_NAME)
+    pwd = remember("irc password", None)
     send("USER %s * * :%s" % (user, name))
+    if pwd:
+        send("PASS %s" % pwd)
     send("NICK %s" % nick)
     buf = ""
     while 1:
