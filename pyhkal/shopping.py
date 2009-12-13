@@ -38,7 +38,7 @@ class ShoppingMall(object):
                 fullname, *imp.find_module(name, list(self.get_paths())))
         mod = sys.modules.setdefault(fullname, imp.new_module(fullname))
         mod.__loader__ = self
-        mod.__dict__.update(pyhkal.api.__dict__)
+        mod.__dict__.update(pyhkal.api.api)
         mod.__name__ = fullname
         mod.__module__ = name
         exec loader.get_code() in mod.__dict__

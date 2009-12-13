@@ -1,15 +1,18 @@
 # encoding: utf-8
 
-import functools
 import inspect
-import os.path
 from distutils.version import LooseVersion
 import pyhkal.shopping
 import pyhkal.engine
-import pyhkal.davenport as davenport
+import pyhkal.davenport
 
 #+ expose only specially marked up items
+api_keys = set()
+def expose(item):
+    api_keys.add(item)
+    return item
 
+@expose
 def hi(**meta):
     """
     """
@@ -21,15 +24,18 @@ def hi(**meta):
             mod[dep] = pyhkal.shopping.buy(dep)
     mod['__metadata__'] = meta
 
+@expose
 def hook(event, *args):
     def wrapper(f):
         pyhkal.engine.add_listener(event, f)
         return f
     return wrapper
 
+@expose
 def thread(func):
     return func
 
+@expose
 def register(command):
     return lambda f:f
     name = function.__name__
@@ -38,8 +44,13 @@ def register(command):
     commands[name] == function
     return function
 
+@expose
 def send(message, dest=None):
     """dest ist standardmäßig `origin` der vorher ausgeführten Funktion
     """
     for t in hooks['send'].values():
         t(message, dest)
+
+expose(pyhkal.davenport.remember)
+
+api = dict((v.__name__, v) for v in api_keys)
