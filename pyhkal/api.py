@@ -35,13 +35,10 @@ def thread(func):
     return func
 
 @expose
-def register(command):
-    return lambda f:f
-    name = function.__name__
-    if name in commands:
-        raise ModuleError("duplicate namespace")
-    commands[name] == function
-    return function
+def register(func):
+    name = func.__name__
+    pyhkal.engine.add_command(name, func)
+    return func
 
 @expose
 def send(message, dest=None):
