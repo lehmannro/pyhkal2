@@ -4,12 +4,12 @@
 import collections
 import weakref
 from _weakrefset import WeakSet
-import pyhkal.shopping as shopping
 import pyhkal.davenport as davenport
+import pyhkal.shopping as shopping
 
 listeners = collections.defaultdict(WeakSet)
-commands = {}
-modules = []
+#+ support subcommands
+commands = weakref.WeakValueDictionary()
 # dict of str -> (callback, dict of str -> (callback, dict ...))
 
 def run(location=None):
@@ -25,15 +25,16 @@ def add_listener(event, listener):
 def dispatch_event(event, *args):
     for dispatcher in listeners[event]:
         dispatcher(*args)
-    #+ event dispatch
 
-def dispatch_command(origin, command, *args):
-    # Erwartet den Command in Listen-Form:
-    # z.B.: ['rep', '-svn', 'install', 'stfumod']
-    # Andere Transportschichten müssen dieses Format entsprechend einhalten.
+def add_command(command, listener, parent=None):
+    #+ support subcommands
+    if command in commands:
+        raise SystemError
+    commands[command] = listener
+
+def dispatch_command(origin, command, args):
     #+ subcommand dispatch
-    #   !rep
-    #     -svn ('install', 'stfumod')
+    #+ check for number of arguments
     if command in commands:
         commands[command](origin, args)
 
