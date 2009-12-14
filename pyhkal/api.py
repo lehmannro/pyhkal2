@@ -2,11 +2,10 @@
 
 import inspect
 from distutils.version import LooseVersion
-import pyhkal.shopping
-import pyhkal.engine
 import pyhkal.davenport
+import pyhkal.engine
+import pyhkal.shopping
 
-#+ expose only specially marked up items
 api_keys = set()
 def expose(item):
     api_keys.add(item)
