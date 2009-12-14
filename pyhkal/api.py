@@ -48,5 +48,6 @@ def send(message, dest=None):
         t(message, dest)
 
 expose(pyhkal.davenport.remember)
+expose(pyhkal.engine.dispatch_command)
 
 api = dict((v.__name__, v) for v in api_keys)
