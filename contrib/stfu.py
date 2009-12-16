@@ -17,19 +17,10 @@ Additionally, the cake is a lie.
 Deal with it. NUUUU :(((
 """
 
-@hook("PRIVMSG", r"\b(\w+)\+\+") #+ unterschiedliche funktionen weil andere signatur
-@register("++")
-def karma_add(origin, *args):
-    "increases karma by one"
-    subject = args[0]
-    karma = bot.get("karma", name=subject) + 1
-    bot.update("karma", name=subject, value=karma)
-    bot.send("%s hat nun ein Karma von %d" % (subject, karma))
-    bot.send("ACHTUNG, KARMA!", dest=user.admins + [origin.public])
 
-@register # äquivalent zu register("anderer_namespace")
-def anderer_namespace(origin, *args):
-    pass
+@register
+def stfu(origin, args):
+    irc.send("MODE %s +m" % origin.public)
 
 @hook("shutdown")
 def save():
