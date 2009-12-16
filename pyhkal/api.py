@@ -4,16 +4,33 @@ import inspect
 from distutils.version import LooseVersion
 import pyhkal.davenport
 import pyhkal.engine
+import pyhkal.fred
 import pyhkal.shopping
 
-api_keys = set()
-def expose(item):
-    api_keys.add(item)
-    return item
+api = {}
+def expose(item_or_name, item=None):
+    """
+    >>> expose(obj)
+    >>> @expose
+    ... def func(): pass
+    ...
+    >>> expose("name", obj)
+    """
+    if item:
+        api[item_or_name] = item
+    else:
+        api[item_or_name.__name__] = item_or_name
 
 @expose
 def hi(**meta):
     """
+    >>> hi(
+    ...     version = "1.0",
+    ...     depends = [
+    ...         "modname",
+    ...     ],
+    ... )
+
     """
     frame = inspect.currentframe().f_back
     mod = frame.f_globals
@@ -25,14 +42,10 @@ def hi(**meta):
 
 @expose
 def hook(event, *args):
-    def wrapper(f):
-        pyhkal.engine.add_listener(event, f)
-        return f
-    return wrapper
-
-@expose
-def thread(func):
-    return func
+    def deco(func):
+        pyhkal.engine.add_listener(event, func)
+        return func
+    return deco
 
 @expose
 def register(func):
@@ -42,12 +55,8 @@ def register(func):
 
 @expose
 def send(message, dest=None):
-    """dest ist standardmäßig `origin` der vorher ausgeführten Funktion
-    """
-    for t in hooks['send'].values():
-        t(message, dest)
+    dispatch_event('send', message)
 
 expose(pyhkal.davenport.remember)
 expose(pyhkal.engine.dispatch_command)
-
-api = dict((v.__name__, v) for v in api_keys)
+expose("thread", pyhkal.fred.threaded)
