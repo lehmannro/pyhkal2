@@ -9,6 +9,7 @@ DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
 DEFAULT_USER = "pyhkal"
 DEFAULT_NAME = "PyHKAL 2.0"
+DEFAULT_PREFIX = "!"
 
 import socket
 
@@ -38,6 +39,7 @@ def establish_connection():
     if pwd:
         send("PASS %s" % pwd)
     send("NICK %s" % nick)
+    prefix = ":" + remember("irc prefix", DEFAULT_PREFIX)
     buf = ""
     while 1:
         buf += s.recv(1024)
@@ -50,16 +52,12 @@ def establish_connection():
                 send(line.replace("PING", "PONG "))
             elif line.startswith(":"):
                 line = line.split()
-                if line[1] == "376": # End of MOTD
+                if line[1] == "376": # RPL_ENDOFMOTD
                     for channel in remember("irc channels", []):
                         send("JOIN %s" % channel)
-                elif line[1] == "433": # Nickname already in use
+                elif line[1] == "433": # ERR_NICKNAMEINUSE
                     send("NICK %s-" % line[3])
+                elif line[1] == "PRIVMSG": # Private messages
+                    if line[3].startswith(prefix):
+                        dispatch_command(None, line[3][len(prefix):], line[4:])
             buf = buf[eolpos+2:]
-#    if x.match("PRIVMSG * :!*"): #+ prefix aus der config laden
-#        origin, command = x.matches()
-        #+ in WebMod: x.split("/")
-#        dispatch_command(IRCChannel(origin), command)
-#    else:
-#        _, event, *args = x.split()
-#        dispatch_event(event, args)
