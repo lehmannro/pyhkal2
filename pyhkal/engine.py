@@ -4,6 +4,7 @@
 import collections
 import weakref
 from _weakrefset import WeakSet
+from twisted.internet import reactor
 import pyhkal.davenport as davenport
 import pyhkal.shopping as shopping
 
@@ -18,6 +19,7 @@ def run(location=None):
     for mod in davenport.remember("modules"):
         shopping.buy(mod)
     dispatch_event("startup")
+    reactor.run()
 
 def add_listener(event, listener):
     listeners[event].add(listener)
