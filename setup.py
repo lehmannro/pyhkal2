@@ -13,6 +13,7 @@ setup(name='pyhkal',
 #      license="",
       packages=['pyhkal', 'pyhkal.contrib'],
       package_dir={'pyhkal.contrib': 'contrib'},
+      scripts=['bin/pyhkal', 'bin/pyhkal-configure'],
       classifiers=[
           'Development Status :: 2 - Pre-Alpha',
           'Topic :: Communications :: Chat :: Internet Relay Chat',

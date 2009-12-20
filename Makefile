@@ -1,11 +1,14 @@
+COUCHDB =
 VIRTUALENV = ./var
-SOURCES = $(wildcard pyhkal/*.py) $(wildcard contrib/*.py)
+SOURCES = $(wildcard pyhkal/*.py) $(wildcard contrib/*.py) $(wildbard bin/*) \
+		  setup.py
 
 .PHONY: run virtualenv clean
 
 run: virtualenv
+	@echo "Running PyHKAL.."
 	@cd "$(VIRTUALENV)"; \
-	./bin/python -mpyhkal
+	./bin/pyhkal "$(COUCHDB)"
 
 virtualenv: $(VIRTUALENV) $(VIRTUALENV)/lib/python2.5/site-packages/pyhkal
 $(VIRTUALENV):
