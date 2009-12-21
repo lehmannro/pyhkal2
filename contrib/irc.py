@@ -5,17 +5,44 @@ hi(
     desc = "Internet Relay Chat transport layer",
 )
 
-"""
-"""
-
 from twisted.words.protocols import irc
 from twisted.internet import protocol, reactor
-
 
 DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
 DEFAULT_NAME = "PyHKAL 2.0"
 DEFAULT_PREFIX = "!"
+
+__doc__ = """
+:Settings:
+  irc
+    server
+      Host address.
+    port
+      Host port; defaults to %(DEFAULT_PORT)d.
+    key
+      Server connection password. Some IRC proxies will require your key to
+      contain "username:password" because passwords are submitted before
+      registration is completed.
+    nick
+      Initially desired pseudonym. It will be automatically adjusted if the
+      nickname is already in use on sign-on. Most IRC servers impose certain
+      rules on nicknames, eg. a maximum length of 15 characters, a restricted
+      character set (word characters and ``[]\\\`^{|}``), no digits or hyphens
+      in front of the nickname. Defaults to %(DEFAULT_NICK)s.
+    name
+      Real name; may contain spaces; defaults to "%(DEFAULT_NAME)s".
+    user
+      Username. This is your identity if not provided otherwise by an Ident
+      Protocol daemon (:rfc:`1413`). Defaults to your nickname set in `nick`.
+    prefix
+      Trigger in messages to dispatch commands; defaults to
+      ``%(DEFAULT_PREFIX)s``.
+    channels
+      List of channels which will be joined on sign-on. Channels need to start
+      with any neccessary prefixes defined by the IRC server (eg. ``#`` or
+      ``&``).
+""" % locals()
 
 @hook("send")
 def send_message(message, dest):
@@ -45,7 +72,7 @@ class IRCClient(irc.IRCClient):
 class IRCClientFactory(protocol.ReconnectingClientFactory):
     protocol = IRCClient
     initialDelay = 10.0
-    factor = 1.7071067811865475 # Phi
+    factor = 1.6180339887498948 # Phi as math.e is too large
     maxDelay = 60 * 5
     def buildProtocol(self, addr):
         p = self.protocol()
@@ -66,4 +93,5 @@ def establish_connection():
     factory = IRCClientFactory()
     server = remember("irc server")
     port = remember("irc port")
+    #+ support SSL
     reactor.connectTCP(server, port, factory)
