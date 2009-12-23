@@ -33,14 +33,13 @@ class ShoppingMall(object):
         #+ do not neccessarily reset dunder attributes on reload
         #  (fullname in sys.modules)
         name = fullname[len('pyhkal:'):]
-        self.loader = loader =  pkgutil.ImpLoader(
-                fullname, *imp.find_module(name, list(self.get_paths())))
         mod = sys.modules.setdefault(fullname, imp.new_module(fullname))
-        mod.__loader__ = self
+        loader = pkgutil.ImpLoader(
+            fullname, *imp.find_module(name, list(self.get_paths())))
         from pyhkal.api import api
         mod.__dict__.update(api)
-        mod.__name__ = fullname
-        mod.__module__ = name
+        mod.__loader__ = self
+        mod.__file__ = loader.get_filename()
         exec loader.get_code() in mod.__dict__
         return mod
 
