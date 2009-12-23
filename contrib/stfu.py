@@ -1,15 +1,7 @@
 # coding: utf-8
 
-hi(
-    version = "0.1",
-    depends = [
-      "irc>=0.1",
-    ],
-    author = "struc & starg", # ?? authors?
-    desc = "mute channel temporarily",
-)
+"""mute channel temporarily
 
-"""
 stfu is a module that yaddas.
 You have to be aware that moomoo.
 foo bar occassionally happens.
@@ -17,6 +9,8 @@ Additionally, the cake is a lie.
 Deal with it. NUUUU :(((
 """
 
+__version__ = "0.1"
+__requires__ = ["irc"]
 
 @register
 def stfu(origin, args):
