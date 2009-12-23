@@ -10,7 +10,7 @@ import pyhkal.shopping
 api = {}
 def expose(item_or_name, item=None):
     """
-    >>> expose(obj)
+    >>> expose(obj) # requires obj to have __name__ attribute
     >>> @expose
     ... def func(): pass
     ...
@@ -20,25 +20,6 @@ def expose(item_or_name, item=None):
         api[item_or_name] = item
     else:
         api[item_or_name.__name__] = item_or_name
-
-@expose
-def hi(**meta):
-    """
-    >>> hi(
-    ...     version = "1.0",
-    ...     depends = [
-    ...         "modname",
-    ...     ],
-    ... )
-
-    """
-    frame = inspect.currentframe().f_back
-    mod = frame.f_globals
-    if 'depends' in meta:
-        for dependency in meta['depends']:
-            dep = LooseVersion(dependency).version[0]
-            mod[dep] = pyhkal.shopping.buy(dep)
-    mod['__metadata__'] = meta
 
 @expose
 def hook(event, *args):
