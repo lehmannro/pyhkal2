@@ -2,6 +2,7 @@
 
 import inspect
 from distutils.version import LooseVersion
+from twisted.application.service import Service
 import pyhkal.davenport
 import pyhkal.engine
 import pyhkal.fred
@@ -52,6 +53,8 @@ def register(func):
     name = func.__name__
     pyhkal.engine.add_command(name, func)
     return func
+
+expose("twist", pyhkal.engine.add_service)
 
 @expose
 def send(message, dest=None):

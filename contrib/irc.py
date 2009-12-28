@@ -5,8 +5,9 @@ hi(
     desc = "Internet Relay Chat transport layer",
 )
 
-from twisted.words.protocols import irc
+from twisted.application import internet
 from twisted.internet import protocol, reactor
+from twisted.words.protocols import irc
 
 DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
@@ -94,4 +95,5 @@ def establish_connection():
     server = remember("irc server")
     port = remember("irc port")
     #+ support SSL
-    reactor.connectTCP(server, port, factory)
+    service = internet.TCPClient(server, port, factory)
+    twist(service)
