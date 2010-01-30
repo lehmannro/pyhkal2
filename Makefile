@@ -1,7 +1,7 @@
 VIRTUALENV = ./var
 SOURCES = $(wildcard pyhkal/*.py) $(wildcard contrib/*.py) $(wildbard bin/*) \
 		  setup.py pyhkal/service.tac
-PYVER = 2.5
+PYVER = $(shell python -V 2>&1 | grep -o '[0-9].[0-9]')
 
 .PHONY: run test virtualenv clean
 
