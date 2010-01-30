@@ -31,10 +31,14 @@ def hook(event, *args):
     return deco
 
 @expose
-def register(func):
-    name = func.__name__
-    pyhkal.engine.add_command(name, func)
-    return func
+def register(func_or_name):
+    if isinstance(func_or_name, basestring):
+        def wrapper(func):
+            pyhkal.engine.add_command(func_or_name, func)
+            return func
+        return wrapper
+    pyhkal.engine.add_command(func_or_name.__name__, func_or_name)
+    return func_or_name
 
 expose("twist", pyhkal.engine.add_service)
 
