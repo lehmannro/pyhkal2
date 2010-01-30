@@ -68,7 +68,8 @@ class IRCClient(irc.IRCClient):
                 command, args = message.split(None, 1)
             else:
                 command, args = message, []
-            dispatch_command(None, command[len(self.prefix):], args)
+            origin = Origin('channel', sender, recip)
+            dispatch_command(origin, command[len(self.prefix):], args)
 
 class IRCClientFactory(protocol.ReconnectingClientFactory):
     protocol = IRCClient
