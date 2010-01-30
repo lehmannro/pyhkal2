@@ -83,12 +83,12 @@ class IRCClientFactory(protocol.ReconnectingClientFactory):
     def buildProtocol(self, addr):
         p = self.protocol()
         p.factory = self
-        p.nickname = remember("irc nick", DEFAULT_NICK)
-        p.realname = remember("irc name", DEFAULT_NAME)
-        p.username = remember("irc user", None)
-        p.password = remember("irc key", None)
-        p.prefix = remember("irc prefix", DEFAULT_PREFIX)
-        p.channels = remember("irc channels", [])
+        p.nickname = str(remember("irc nick", DEFAULT_NICK))
+        p.realname = str(remember("irc name", DEFAULT_NAME))
+        p.username = str(remember("irc user", None))
+        p.password = str(remember("irc key", None))
+        p.prefix = str(remember("irc prefix", DEFAULT_PREFIX))
+        p.channels = str(remember("irc channels", []))
         return p
     def clientConnectionFailed(self, connector, reason):
         print reason.value
