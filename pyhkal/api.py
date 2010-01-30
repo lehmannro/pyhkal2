@@ -6,6 +6,7 @@ from twisted.application.service import Service
 import pyhkal.davenport
 import pyhkal.engine
 import pyhkal.fred
+import pyhkal.origin
 import pyhkal.shopping
 
 api = {}
@@ -58,8 +59,10 @@ expose("twist", pyhkal.engine.add_service)
 
 @expose
 def send(message, dest=None):
-    dispatch_event('send', message)
+    pyhkal.engine.dispatch_event('send', message)
 
 expose(pyhkal.davenport.remember)
 expose(pyhkal.engine.dispatch_command)
+expose(pyhkal.engine.dispatch_event)
 expose("thread", pyhkal.fred.threaded)
+expose(pyhkal.origin.Origin)
