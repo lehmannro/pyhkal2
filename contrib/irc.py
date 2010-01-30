@@ -50,6 +50,13 @@ def send_message(message, dest):
             socket.send("PRIVMSG %s :%s" % (d, message))
 
 class IRCClient(irc.IRCClient):
+    def __init__(self):
+        for name in dir(irc.IRCClient):
+            def obj(self, *args):
+                dispatch_event("irc."+name, *args)
+            if not hasattr(IRCClient,name):
+                setattr(self, name, obj)
+
     def connectionMade(self):
         def send(msg):
             print "Sending %s" % (msg,)
@@ -57,10 +64,14 @@ class IRCClient(irc.IRCClient):
         hook("irc.send")(send)
         self._send = send
         irc.IRCClient.connectionMade(self)
-    def signedOn(self):
-        for channel in self.channels:
+
+    def kickedFrom(self, channel, kicker, message):
+        dispatch_event("irc.kicked", channel, kicker, message)
+        if channel in self.channels: # autorejoin
             self.join(channel)
+
     def privmsg(self, sender, recip, message):
+        dispatch_event("irc.privmsg", sender, recip, message)
         if message.startswith(self.prefix):
             if " " in message:
                 command, args = message.split(None, 1)
@@ -68,6 +79,45 @@ class IRCClient(irc.IRCClient):
                 command, args = message, []
             origin = Origin('channel', sender, recip)
             dispatch_command(origin, command[len(self.prefix):], args)
+    def signedOn(self):
+        dispatch_event("irc.signon")
+        for channel in self.channels:
+            self.join(channel)
+    def modeChanged(self, user, channel, set, modes, args):
+        dispatch_event("irc.modechange", user, channel, set, modes, args)
+        if set:
+            dispatch_event("irc.setmode", user, channel, modes, args)
+        else:
+            dispatch_event("irc.delmode", user, channel, modes, args)
+    def lineReceived(self, data):  
+        irc.IRCClient.lineReceived(self, data)
+        spacetuple = data.split(' ')
+        colontuple = data.split(':')
+        numeric = spacetuple[1]
+        #params = colontuple[2]
+        print "<", numeric, ">", data       
+        if numeric == '353':
+            dispatch_event("irc.names", colontuple[2].split(' ')) # dirty list! like 
+
+
+"""
+2010-01-30 18:54:35+0100 [IRCClient,client] < JOIN > :PyHKAL3!PyHKAL2@server3.raumopol.de JOIN :#p
+
+2010-01-30 18:54:35+0100 [IRCClient,client] < 353 > :port80a.se.quakenet.org 353 PyHKAL3 = #p :@Antesz @BMCT|JP`off CaTeYe PyHKAL3 @Q SaNci Scolo WA|4130 @esad gNu|boe @mark` @mrk` @si_- soma @wowbot @|Qlogged|
+2010-01-30 18:54:35+0100 [IRCClient,client] < 366 > :port80a.se.quakenet.org 366 PyHKAL3 #p :End of /NAMES list.
+
+
+
+354 <ich> <ziel> <auth>
+315 <end of who>
+
+
+353 channel names
+366 "end of names list"
+
+":port80a.se.quakenet.org 474 PyHKAL3 #' :Cannot join channel, you are banned (+b)"
+
+"""
 
 class IRCClientFactory(protocol.ReconnectingClientFactory):
     protocol = IRCClient
