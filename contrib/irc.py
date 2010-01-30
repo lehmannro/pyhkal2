@@ -8,6 +8,7 @@ from twisted.application import internet
 from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 from itertools import cycle
+from types import MethodType
 
 DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
@@ -52,13 +53,17 @@ def send_message(message, dest):
 
 class IRCClient(irc.IRCClient):
     def __init__(self):
-        for name in dir(irc.IRCClient):
-            def obj(self, *args):
-                dispatch_event("irc."+name, *args)
-            if not hasattr(IRCClient,name):
-                setattr(self, name, obj)
+        for name in dir(irc.IRCClient): # Funktionen in twisted-ircclient
+            def obj(self, *args):       #  definieren wir neu.
+                dispatch_event("irc."+name, *args) # Erst werfen wir unseren Hook
+                getattr(irc.IRCClient, "irc."+name)(*args) # und führen die "alte" twisted-funktion aus.
+            obj = MethodType(obj,self) # (wir binden es an die Instanz..oder Klasse)
+            if not hasattr(IRCClient,name): # aber nur falls wir sie nicht selbst weiter unten definiert haben..
+                setattr(self, name, obj)    # nehmen wir die aus twisted. :)
+
         self.whocounter = iter(cycle(xrange(1,1000)))
-        self.whocallbacks = {}
+        self.whocalls = {}
+        self.whoresults = {}
 
     def connectionMade(self):
         def send(msg):
@@ -87,52 +92,70 @@ class IRCClient(irc.IRCClient):
         for channel in self.channels:
             self.join(channel)
     def modeChanged(self, user, channel, set, modes, args):
-        print "<>", modes, repr(args)
         dispatch_event("irc.modechange", user, channel, set, modes, args)
         if set:
             dispatch_event("irc.setmode", user, channel, modes, args)
         else:
             dispatch_event("irc.delmode", user, channel, modes, args)
+
+    def isupport(self, options):
+        pass
+    """
+    21:47 < ai> def isupport(options):
+    21:47 < ai>     for option in options:
+    21:47 < ai>         s = option.split('=')
+    21:47 < ai>         if len(s) == 2:
+    """
+
     def lineReceived(self, data):  
         irc.IRCClient.lineReceived(self, data)
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
-        #params = colontuple[2]
-        #print "<", numeric, ">", data       
         if numeric == '353':
-            dispatch_event("irc.names", spacetuple[4], colontuple[2].split(' ')) # dirty list! like ['@ChosenOne','+npx', 'crosbow']
+            dispatch_event("irc.names", spacetuple[4], colontuple[2].split(' ')) # dirty list! like: ['@ChosenOne','+npx', 'crosbow']
         if numeric == "366":
             dispatch_event('irc.endofnames', spacetuple[3] )
     
         if numeric == "354":
-            dispatch_event('irc.whorep', spacetuple[3:]) # generic hook, that will give you the answer, without knowing the question :D
-            
+            ":clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX"
+            "                                    ^--me    ^--ID ^-ident ^--host              ^-nick^--flags^--auth ^--realname"
+            resultdict = dict(zip( ('ident', 'host','nick','flags','auth','realname'), spacetuple[4:].split() ))
+            resultdict['away'] = ('G' in resultdict['flags']) 
+            resultdict['auth'] = None if (resultdict['auth'] == 0) else resultdict['auth']
+            ID = spacetuple[3]            
+            print "<<got authnickidentfooline>", repr(resultdict)
+            dispatch_event('irc.whoreply', resultdict) # generic hook, that will give you the answer, without knowing the question :D
+            if ID in whoresults: # how funny would "whoresluts" be,?! :P
+                whoresults[ID].append(resultdict)
+                
+        if numeric == "315":
+            ":clanserver4u1.de.quakenet.org 315 ChosenOne #pyhkal, :End of /WHO list."
+            "                                               ^-spacetuple4            "
 
-    def getInfo(self, target, callback_result, callback_end):
+            target = spacetuple[4][:-1] # disregard comma with [:-1]
+            (callback, ID) = whocalls[target]
+            results = whoresults[ID]
+            callback(results)  #we perform callback(list) here. the list is a list of resultdicts (resultdict-example see aboe)
+            dispatch_event('irc.wholist', results)
+            # we're done here, deleting..
+            del(whocalls[target]) 
+            del(whoresults[ID])
+
+    def getInfo(self, target, callback_result):
+        """ Example of sent command: WHO #pyhkal, %nafuhrt,666"""
         ID = whocounter.next()
-        whocallbacks[ID] = (ID, callback_result, callback_end)
+        """
+        whocalls: target -> callback,id
+        whoresults: id -> (resultline,...)
+        """
+        whocalls[target] = (callback_result, ID)
+        whoresults[ID] = []
         if target[0] == '#':
             self.send("WHO %s %nafuhr,%s" % (target, ID))
         else: # nickname
             self.send("WHO %s, %nafuhr,%s" % (target, ID))
-        
-"""
-
-id ident host nickname flags auth/0 realname
-
-<< WHO #pyhkal, %nafuhrt,666
->> :clanserver4u1.de.quakenet.org 354 ChosenOne 666 ~ai p4FE4D27B.dip.t-dialin.net ai H 0 :Always Innovating
->> :clanserver4u1.de.quakenet.org 354 ChosenOne 666 ~olpc p4FE4D27B.dip.t-dialin.net olpc H 0 :Unknown
->> :clanserver4u1.de.quakenet.org 354 ChosenOne 666 ~chosenone client-vpn-56.rz.ruhr-uni-bochum.de ChosenOne H+ 0 :chosenone
->> :clanserver4u1.de.quakenet.org 354 ChosenOne 666 PyHKAL2 server3.raumopol.de PyHKAL3 H@ 0 :PyHKAL
->> :clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX
->> :clanserver4u1.de.quakenet.org 354 ChosenOne 666 ~saldana smitty.knid.net saldana H@ 0 :saldana
->> :clanserver4u1.de.quakenet.org 354 ChosenOne 666 StruC server3.raumopol.de StruC H@ StruC :StruC
->> :clanserver4u1.de.quakenet.org 354 ChosenOne 666 stargaming server3.raumopol.de starGaming H@ stargaming :stargaming
->> :clanserver4u1.de.quakenet.org 315 ChosenOne #pyhkal, :End of /WHO list.
-
-"""
+     
 
 
 
