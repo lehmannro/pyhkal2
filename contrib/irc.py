@@ -57,8 +57,11 @@ def send_message(message, dest):
 
 class IRCClient(irc.IRCClient):
     def connectionMade(self):
+        def send(msg):
+            print "Sending %s" % (msg,)
+            self.sendLine(msg)
+        hook("irc.send")(send)
         irc.IRCClient.connectionMade(self)
-        hook("send")(self.sendLine)
     def signedOn(self):
         for channel in self.channels:
             self.join(channel)

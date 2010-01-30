@@ -20,7 +20,7 @@ Deal with it. NUUUU :(((
 
 @register
 def stfu(origin, args):
-    irc.send("MODE %s +m" % origin.public)
+    dispatch_event('irc.send', "MODE %s +m" % origin.public)
 
 @hook("shutdown")
 def save():
