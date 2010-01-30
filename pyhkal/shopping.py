@@ -8,6 +8,7 @@ import imp
 import os.path
 import pkgutil
 import sys
+import textwrap
 
 SHOPPING_MALL = "contrib"
 
@@ -41,6 +42,8 @@ class ShoppingMall(object):
         mod.__loader__ = self
         mod.__file__ = loader.get_filename()
         exec loader.get_code() in mod.__dict__
+        for dep in getattr(mod, '__requires__', []):
+            buy(dep)
         return mod
 
 sys.meta_path.append(ShoppingMall())

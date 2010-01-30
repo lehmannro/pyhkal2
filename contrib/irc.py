@@ -1,9 +1,8 @@
 # encoding: utf-8
 
-hi(
-    version = "0.1",
-    desc = "Internet Relay Chat transport layer",
-)
+"Internet Relay Chat transport layer"
+
+__version__ = 0.1
 
 from twisted.application import internet
 from twisted.internet import protocol, reactor
@@ -14,36 +13,31 @@ DEFAULT_NICK = "pyhkal"
 DEFAULT_NAME = "PyHKAL 2.0"
 DEFAULT_PREFIX = "!"
 
-__doc__ = """
-:Settings:
-  irc
-    server
-      Host address.
-    port
-      Host port; defaults to %(DEFAULT_PORT)d.
-    key
-      Server connection password. Some IRC proxies will require your key to
-      contain "username:password" because passwords are submitted before
-      registration is completed.
-    nick
-      Initially desired pseudonym. It will be automatically adjusted if the
-      nickname is already in use on sign-on. Most IRC servers impose certain
-      rules on nicknames, eg. a maximum length of 15 characters, a restricted
-      character set (word characters and ``[]\\\`^{|}``), no digits or hyphens
-      in front of the nickname. Defaults to %(DEFAULT_NICK)s.
-    name
-      Real name; may contain spaces; defaults to "%(DEFAULT_NAME)s".
-    user
-      Username. This is your identity if not provided otherwise by an Ident
-      Protocol daemon (:rfc:`1413`). Defaults to your nickname set in `nick`.
-    prefix
-      Trigger in messages to dispatch commands; defaults to
-      ``%(DEFAULT_PREFIX)s``.
-    channels
-      List of channels which will be joined on sign-on. Channels need to start
-      with any neccessary prefixes defined by the IRC server (eg. ``#`` or
-      ``&``).
-""" % locals()
+__settings__ = dict(
+    irc = dict(
+        server = "Host address.",
+        port = "Host port; defaults to %d." % DEFAULT_PORT,
+        key = """Server connection password. Some IRC proxies will require
+            your key to contain "username:password" because passwords are
+            submitted before registration is complete.""",
+        nick = """Initially desired pseudonym. It will be automatically
+            adjusted if the nickname is already in use on sign-on. Most IRC
+            servers impose certain rules on nicknames, eg. a maximum length of
+            15 characters, a restricted character set (word characters and
+            ``[]\\\`^{|}``), no digits or hyphens in front of the nickname.
+            Defaults to %s.""" % DEFAULT_NICK,
+        name = "Real name; may contain spaces; defaults to \"%s.\"" %
+            DEFAULT_NAME,
+        user = """Username. This is your identity if not provided otherwise by
+            an Ident Protocol daemon (:rfc:`1413`). Defaults to your nickname
+            set in `nick`.""",
+        prefix = """Trigger in messages to dispatch commands; defaults to
+            ``%s``.""" % DEFAULT_PREFIX,
+        channels = """List of channels which will be joined on sign-on.
+            Channels need to start with any neccessary prefixes defined by the
+            IRC server (eg. ``#`` or ``&``).""",
+    )
+)
 
 @hook("send")
 def send_message(message, dest):
