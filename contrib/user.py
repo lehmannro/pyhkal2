@@ -29,7 +29,7 @@
 """
 
 __version__ = "0.1a"
-__requires__ = ['admin','irc',"channel"]
+__requires__ = ['irc',"channel"]
 
 @register("login")
 def login_cmd(origin, args):
@@ -94,16 +94,16 @@ def hashPass(password):
     h.update(name + password) #TODO salty pirate arr
     return h.hexdigest()
 
-viewLoggedInAs = chaos("UserAccLoggedInAs",
-    """
-        if (RegExp(doc.loggedinas).test(%s)) {
-            emit("penis",doc)
-        }
-    """ % phrase
+#viewLoggedInAs = chaos("UserAccLoggedInAs",
+#    """
+#        if (RegExp(doc.loggedinas).test(%s)) {
+#            emit("penis",doc)
+#        }
+#    """ % phrase)
 
 # Penis Penis Penis! Macht das Davenport Zeug
 def getInfo(account, data):
-    
+    pass
 
 def setInfo(account, data, value):
     """"""
