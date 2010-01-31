@@ -43,7 +43,7 @@ def remember(breadcrumbs, default=_none):
             return default
         raise
 
-def chaos(by, map_fun, reduce_fun):
+def chaos(by, map_fun, reduce_fun=None):
     couchdb.design.ViewDocument(by, "view",
         "function(doc){ %s }" % map_fun,
         "function(keys, values){ %s }" % reduce_fun if reduce_fun else None
