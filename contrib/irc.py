@@ -51,16 +51,21 @@ def send_message(message, dest):
             #+ spam queue für channels
             socket.send("PRIVMSG %s :%s" % (d, message))
 
-class IRCClient(irc.IRCClient):
+class IRCClient(irc.IRCClient, object):
     def __init__(self):
-        for name in dir(irc.IRCClient): # Funktionen in twisted-ircclient
-            def obj(self, *args):       #  definieren wir neu.
-                dispatch_event("irc."+name, *args) # Erst werfen wir unseren Hook
-                getattr(irc.IRCClient, "irc."+name)(*args) # und führen die "alte" twisted-funktion aus.
-            obj = MethodType(obj,self) # (wir binden es an die Instanz..oder Klasse)
-            if not hasattr(IRCClient,name): # aber nur falls wir sie nicht selbst weiter unten definiert haben..
-                setattr(self, name, obj)    # nehmen wir die aus twisted. :)
-
+        """
+        # vorher: dir(irc.IRCClient)
+        for name in set(dir(irc.IRCClient)) - set(['yourHost']): # Funktionen in twisted-ircclient
+            if callable(getattr(irc.IRCClient, name, name)) and not name.startswith("_"):
+                print "in ircclient: ",name
+                def obj(*args):       #  definieren wir neu.
+                    print "Calling irc.", name, "with: ", args
+                    dispatch_event("irc."+name, *args) # Erst werfen wir unseren Hook
+                    getattr(irc.IRCClient, name)( *args) # und führen die "alte" twisted-funktion aus.
+                obj = MethodType(obj,self, self.__class__) # (wir binden es an die Instanz..oder Klasse)
+                if name not in self.__class__.__dict__: # aber nur falls wir sie nicht selbst weiter unten definiert haben..
+                    setattr(self, name, obj)    # nehmen wir die aus twisted. :)
+        """
         self.whocounter = iter(cycle(xrange(1,1000)))
         self.whocalls = {}
         self.whoresults = {}
@@ -99,25 +104,28 @@ class IRCClient(irc.IRCClient):
             dispatch_event("irc.delmode", user, channel, modes, args)
 
     def isupport(self, options):
-        pass
-    """
-    21:47 < ai> def isupport(options):
-    21:47 < ai>     for option in options:
-    21:47 < ai>         s = option.split('=')
-    21:47 < ai>         if len(s) == 2:
-    """
+        """['CPRIVMSG', 'MAXCHANNELS=20', 'CHANMODES=b,k,l,imnpstrDducCNMT', ...]"""
+        self.serveroptions = {}
+        for option in options:
+            s = option.split('=')
+            self.serveroptions[s[0]] = s[1] if len(s) == 2 else None
+        self.chanmodes = dict(zip(('addressModes', 'param', 'setParam', 'noParam'), self.serveroptions['CHANMODES'].split(',')) )
+        print self.chanmodes
 
-    def lineReceived(self, data):  
+
+    def lineReceived(self, data): 
+        print ">> ", data
         irc.IRCClient.lineReceived(self, data)
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
-        if numeric == '353':
+        if numeric == '353': # name-answer
+            ":clanserver4u1.de.quakenet.org 353 ChosenOne = #chan :@alice +bob charlie"
             dispatch_event("irc.names", spacetuple[4], colontuple[2].split(' ')) # dirty list! like: ['@ChosenOne','+npx', 'crosbow']
-        if numeric == "366":
+        if numeric == "366": # end of /names list
             dispatch_event('irc.endofnames', spacetuple[3] )
     
-        if numeric == "354":
+        if numeric == "354": # triggers on custom /who like the one in getInfo()
             ":clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX"
             "                                    ^--me    ^--ID ^-ident ^--host              ^-nick^--flags^--auth ^--realname"
             resultdict = dict(zip( ('ident', 'host','nick','flags','auth','realname'), spacetuple[4:].split() ))
@@ -129,7 +137,7 @@ class IRCClient(irc.IRCClient):
             if ID in whoresults: # how funny would "whoresluts" be,?! :P
                 whoresults[ID].append(resultdict)
                 
-        if numeric == "315":
+        if numeric == "315": # end of /who list
             ":clanserver4u1.de.quakenet.org 315 ChosenOne #pyhkal, :End of /WHO list."
             "                                               ^-spacetuple4            "
 
