@@ -10,29 +10,15 @@
 """
 
 __version__ = "0.1a"
-__requires__ = ['user']
+__requires__ = ['user','channel']
 
 
-viewLOGIN = chaos("PenisViewLogin",
+viewUSER = chaos("PenisViewUSER",
     """
-        if (RegExp(doc.tikkle.login).test(%s)) {
-            emit("penis",doc)
+        if (doc.type == "user") {
+            emit("penis", doc)
         }
-    """ % "ich bin nur der koch"
-)
-viewAFK = chaos("PenisViewAFK",
     """
-        if (RegExp(doc.tikkle.afk).test(%s)) {
-            emit("penis",doc)
-        }
-    """ % "ich bin nur der koch"
-)
-viewLOGOUT = chaos("PenisViewLOGOUT",
-    """
-        if (RegExp(doc.tikkle.logout).test(%s)) {
-            emit("penis",doc)
-        }
-    """ % "ich bin nur der koch"
 )
 
 @hook('PRIVMSG','/.*/')
@@ -86,12 +72,14 @@ def startTheTikkleFun(origin, args):
                 channel.get_auth_nick(origin.user, takeItToTheNextLevel(qauth))
 
 def getAccountsThatMatchPhrase(typ, phrase):
-    if typ == 'afk':
-        return viewAFK() ## afkphrase
-    elif typ == 'logout':
-        return viewLOGOUT() ## logoutphrase
-    else:
-        return viewLOGIN() ## loginphrase
+        accounts = []
+        if (typ in ['login','afk','logout']):
+            docs = viewUSERS()
+            for d in docs:
+                regexobject = re.compile(d["penis"]["tikkle"][typ])
+                if regexobject.match(phrase) != None:
+                    accounts.append(d)
+        return accounts
 
 @hook("user.loggedin")
 def doStuff(acc):
