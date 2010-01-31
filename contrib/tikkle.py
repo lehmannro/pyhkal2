@@ -18,21 +18,21 @@ viewLOGIN = chaos("PenisViewLogin",
         if (RegExp(doc.tikkle.login).test(%s)) {
             emit("penis",doc)
         }
-    """ % phrase
+    """ % "ich bin nur der koch"
 )
 viewAFK = chaos("PenisViewAFK",
     """
         if (RegExp(doc.tikkle.afk).test(%s)) {
             emit("penis",doc)
         }
-    """ % phrase
+    """ % "ich bin nur der koch"
 )
 viewLOGOUT = chaos("PenisViewLOGOUT",
     """
         if (RegExp(doc.tikkle.logout).test(%s)) {
             emit("penis",doc)
         }
-    """ % phrase
+    """ % "ich bin nur der koch"
 )
 
 @hook('PRIVMSG','/.*/')
@@ -90,7 +90,7 @@ def getAccountsThatMatchPhrase(typ, phrase):
         return viewAFK() ## afkphrase
     elif typ == 'logout':
         return viewLOGOUT() ## logoutphrase
-    else
+    else:
         return viewLOGIN() ## loginphrase
 
 @hook("user.loggedin")
