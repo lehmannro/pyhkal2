@@ -7,6 +7,8 @@ __version__ = 0.1
 from twisted.application import internet
 from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
+from itertools import cycle
+from types import MethodType
 
 DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
@@ -51,11 +53,17 @@ def send_message(message, dest):
 
 class IRCClient(irc.IRCClient):
     def __init__(self):
-        for name in dir(irc.IRCClient):
-            def obj(self, *args):
-                dispatch_event("irc."+name, *args)
-            if not hasattr(IRCClient,name):
-                setattr(self, name, obj)
+        for name in dir(irc.IRCClient): # Funktionen in twisted-ircclient
+            def obj(self, *args):       #  definieren wir neu.
+                dispatch_event("irc."+name, *args) # Erst werfen wir unseren Hook
+                getattr(irc.IRCClient, "irc."+name)(*args) # und führen die "alte" twisted-funktion aus.
+            obj = MethodType(obj,self) # (wir binden es an die Instanz..oder Klasse)
+            if not hasattr(IRCClient,name): # aber nur falls wir sie nicht selbst weiter unten definiert haben..
+                setattr(self, name, obj)    # nehmen wir die aus twisted. :)
+
+        self.whocounter = iter(cycle(xrange(1,1000)))
+        self.whocalls = {}
+        self.whoresults = {}
 
     def connectionMade(self):
         def send(msg):
@@ -89,35 +97,67 @@ class IRCClient(irc.IRCClient):
             dispatch_event("irc.setmode", user, channel, modes, args)
         else:
             dispatch_event("irc.delmode", user, channel, modes, args)
+
+    def isupport(self, options):
+        pass
+    """
+    21:47 < ai> def isupport(options):
+    21:47 < ai>     for option in options:
+    21:47 < ai>         s = option.split('=')
+    21:47 < ai>         if len(s) == 2:
+    """
+
     def lineReceived(self, data):  
         irc.IRCClient.lineReceived(self, data)
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
-        #params = colontuple[2]
-        print "<", numeric, ">", data       
         if numeric == '353':
-            dispatch_event("irc.names", colontuple[2].split(' ')) # dirty list! like 
+            dispatch_event("irc.names", spacetuple[4], colontuple[2].split(' ')) # dirty list! like: ['@ChosenOne','+npx', 'crosbow']
+        if numeric == "366":
+            dispatch_event('irc.endofnames', spacetuple[3] )
+    
+        if numeric == "354":
+            ":clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX"
+            "                                    ^--me    ^--ID ^-ident ^--host              ^-nick^--flags^--auth ^--realname"
+            resultdict = dict(zip( ('ident', 'host','nick','flags','auth','realname'), spacetuple[4:].split() ))
+            resultdict['away'] = ('G' in resultdict['flags']) 
+            resultdict['auth'] = None if (resultdict['auth'] == 0) else resultdict['auth']
+            ID = spacetuple[3]            
+            print "<<got authnickidentfooline>", repr(resultdict)
+            dispatch_event('irc.whoreply', resultdict) # generic hook, that will give you the answer, without knowing the question :D
+            if ID in whoresults: # how funny would "whoresluts" be,?! :P
+                whoresults[ID].append(resultdict)
+                
+        if numeric == "315":
+            ":clanserver4u1.de.quakenet.org 315 ChosenOne #pyhkal, :End of /WHO list."
+            "                                               ^-spacetuple4            "
+
+            target = spacetuple[4][:-1] # disregard comma with [:-1]
+            (callback, ID) = whocalls[target]
+            results = whoresults[ID]
+            callback(results)  #we perform callback(list) here. the list is a list of resultdicts (resultdict-example see aboe)
+            dispatch_event('irc.wholist', results)
+            # we're done here, deleting..
+            del(whocalls[target]) 
+            del(whoresults[ID])
+
+    def getInfo(self, target, callback_result):
+        """ Example of sent command: WHO #pyhkal, %nafuhrt,666"""
+        ID = whocounter.next()
+        """
+        whocalls: target -> callback,id
+        whoresults: id -> (resultline,...)
+        """
+        whocalls[target] = (callback_result, ID)
+        whoresults[ID] = []
+        if target[0] == '#':
+            self.send("WHO %s %nafuhr,%s" % (target, ID))
+        else: # nickname
+            self.send("WHO %s, %nafuhr,%s" % (target, ID))
+     
 
 
-"""
-2010-01-30 18:54:35+0100 [IRCClient,client] < JOIN > :PyHKAL3!PyHKAL2@server3.raumopol.de JOIN :#p
-
-2010-01-30 18:54:35+0100 [IRCClient,client] < 353 > :port80a.se.quakenet.org 353 PyHKAL3 = #p :@Antesz @BMCT|JP`off CaTeYe PyHKAL3 @Q SaNci Scolo WA|4130 @esad gNu|boe @mark` @mrk` @si_- soma @wowbot @|Qlogged|
-2010-01-30 18:54:35+0100 [IRCClient,client] < 366 > :port80a.se.quakenet.org 366 PyHKAL3 #p :End of /NAMES list.
-
-
-
-354 <ich> <ziel> <auth>
-315 <end of who>
-
-
-353 channel names
-366 "end of names list"
-
-":port80a.se.quakenet.org 474 PyHKAL3 #' :Cannot join channel, you are banned (+b)"
-
-"""
 
 class IRCClientFactory(protocol.ReconnectingClientFactory):
     protocol = IRCClient
