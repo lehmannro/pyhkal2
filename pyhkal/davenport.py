@@ -48,7 +48,7 @@ def chaos(by, map_fun, reduce_fun=None):
         "function(doc){ %s }" % map_fun,
         "function(keys, values){ %s }" % reduce_fun if reduce_fun else None
     )
-    view.sync()
+    view.sync(_sofa)
     return lambda:view(_sofa)
 
 def lookup(title):
