@@ -12,6 +12,7 @@ DATABASE = 'pyhkal'
 REMEMBER = 'config'
 
 import couchdb.client
+import couchdb.design
 
 _sofa = None
 
@@ -33,7 +34,7 @@ def remember(breadcrumbs, default=_none):
     morning. For some weird reason, you need a sofa to remember.
 
     """
-    config = get_by_label(REMEMBER)
+    config = lookup(REMEMBER)
     try:
         return reduce(lambda doc, value: doc[value],
                 breadcrumbs.split(), config)
@@ -42,5 +43,11 @@ def remember(breadcrumbs, default=_none):
             return default
         raise
 
-def get_by_label(label):
-    return _sofa[label]
+def chaos(by, map_fun, reduce_fun=None):
+    couchdb.design.ViewDefinition(by, "view",
+        "function(doc){ %s }" % map_fun,
+        "function(keys, values){ %s }" % reduce_fun if reduce_fun else None
+    )
+
+def lookup(title):
+    return _sofa[title]
