@@ -21,7 +21,7 @@ viewUSER = chaos("PenisViewUSER",
     """
 )
 
-@hook('PRIVMSG','/.*/')
+@hook('PRIVMSG')
 def startTheTikkleFun(origin, args):
     if (origin.type == 'channel'):
 
