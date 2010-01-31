@@ -29,7 +29,7 @@
 """
 
 __version__ = "0.1a"
-__requires__ = ['admin','irc',"channel"]
+__requires__ = ['irc',"channel"]
 
 @register("login")
 def login_cmd(origin, args):
