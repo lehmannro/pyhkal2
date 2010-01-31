@@ -71,19 +71,21 @@ class IRCClient(irc.IRCClient, object):
         self.whoresults = {}
 
     def connectionMade(self):
+        irc.IRCClient.connectionMade(self)
         def send(msg):
             print "Sending %s" % (msg,)
             self.sendLine(msg)
         hook("irc.send")(send)
         self._send = send
-        irc.IRCClient.connectionMade(self)
 
     def kickedFrom(self, channel, kicker, message):
+        irc.IRCClient.kickedFrom(self, channel, kicker, message)
         dispatch_event("irc.kicked", channel, kicker, message)
         if channel in self.channels: # autorejoin
             self.join(channel)
 
-    def privmsg(self, sender, recip, message):
+    def privmsg(self, sender, recip, message): # used when RECEIVING a message
+        irc.IRCClient.privmsg(self, sender, recip, message)
         dispatch_event("irc.privmsg", sender, recip, message)
         if message.startswith(self.prefix):
             if " " in message:
@@ -92,7 +94,9 @@ class IRCClient(irc.IRCClient, object):
                 command, args = message, []
             origin = Origin('channel', sender, recip)
             dispatch_command(origin, command[len(self.prefix):], args)
+
     def signedOn(self):
+        irc.IRCClient.signedOn(self)
         dispatch_event("irc.signon")
         for channel in self.channels:
             self.join(channel)
@@ -107,6 +111,7 @@ class IRCClient(irc.IRCClient, object):
 
     def isupport(self, options):
         """['CPRIVMSG', 'MAXCHANNELS=20', 'CHANMODES=b,k,l,imnpstrDducCNMT', ...]"""
+        irc.IRCClient.isupport(self, options)
         self.serveroptions = {}
         for option in options:
             s = option.split('=')
@@ -116,13 +121,13 @@ class IRCClient(irc.IRCClient, object):
         else:
             self.chanmodes = { 'addressModes':'b', 'param':'k', 'setParam':'l', 'noParam':'pimnst' } # fallback
         if "PREFIX" in self.serveroptions:
-            self.serveroptions['PREFIX'] =  serveroptions['PREFIX'].split('(')[1].split(')')  # e.g. ['ov', '@+']
+            self.serveroptions['PREFIX'] = self.serveroptions['PREFIX'].split('(')[1].split(')')  # e.g. ['ov', '@+']
         else:
             self.serveroptions['PREFIX'] = ('ov', '@+') # fallback
 
     def lineReceived(self, data): 
-        print ">> ", data
         irc.IRCClient.lineReceived(self, data)
+        print ">> ", data
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
