@@ -102,6 +102,8 @@ class IRCClient(irc.IRCClient, object):
             dispatch_event("irc.setmode", user, channel, modes, args)
         else:
             dispatch_event("irc.delmode", user, channel, modes, args)
+    def nickChanged(self, nick):
+        print "WHWEHEHE ", nick, "(%s)" % self.nickname
 
     def isupport(self, options):
         """['CPRIVMSG', 'MAXCHANNELS=20', 'CHANMODES=b,k,l,imnpstrDducCNMT', ...]"""
@@ -109,9 +111,14 @@ class IRCClient(irc.IRCClient, object):
         for option in options:
             s = option.split('=')
             self.serveroptions[s[0]] = s[1] if len(s) == 2 else None
-        self.chanmodes = dict(zip(('addressModes', 'param', 'setParam', 'noParam'), self.serveroptions['CHANMODES'].split(',')) )
-        print self.chanmodes
-
+        if "CHANMODES" in self.serveroptions:
+            self.chanmodes = dict(zip(('addressModes', 'param', 'setParam', 'noParam'), self.serveroptions['CHANMODES'].split(',')) )
+        else:
+            self.chanmodes = { 'addressModes':'b', 'param':'k', 'setParam':'l', 'noParam':'pimnst' } # fallback
+        if "PREFIX" in self.serveroptions:
+            self.serveroptions['PREFIX'] =  serveroptions['PREFIX'].split('(')[1].split(')')  # e.g. ['ov', '@+']
+        else:
+            self.serveroptions['PREFIX'] = ('ov', '@+') # fallback
 
     def lineReceived(self, data): 
         print ">> ", data
@@ -121,7 +128,7 @@ class IRCClient(irc.IRCClient, object):
         numeric = spacetuple[1]
         if numeric == '353': # name-answer
             ":clanserver4u1.de.quakenet.org 353 ChosenOne = #chan :@alice +bob charlie"
-            dispatch_event("irc.names", spacetuple[4], colontuple[2].split(' ')) # dirty list! like: ['@ChosenOne','+npx', 'crosbow']
+            dispatch_event("irc.names", spacetuple[4], colontuple[2].split(' ')) # warning: list contains prefixes: ['@ChosenOne','+npx', 'crosbow']
         if numeric == "366": # end of /names list
             dispatch_event('irc.endofnames', spacetuple[3] )
     
@@ -194,3 +201,33 @@ def establish_connection():
     #+ support SSL
     service = internet.TCPClient(server, port, factory)
     twist(service)
+
+#TODO
+"""
+ideas for irc.py
+    - regexcallbacks registrieren über
+        setCallback(funktionsname, regex)
+            -> self.callbacks.append = (func, re)
+        und dann in der privmsg-funktion: foreach self.callbacks:
+            if re-match -> func(msginhalt)
+
+    - test für getInfo
+
+    - prefix/serveroptions
+        diskussion ob severoptions['PREFIX'] durch ein nonstring ersetzt werden sollte..
+
+
+
+channel.py klugscheiß-todo
+    - prefix/mode-chars sind konstant enthalten, statt auf irc.serveroptions zu gehen
+    - who-requests wreden noch selbsttätig angefertigt -> getInfo nutzen
+    - peni muss raus ;D, genauso wie callback(Janno)
+
+
+
+
+
+
+"""
+
+
