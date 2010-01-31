@@ -7,6 +7,7 @@
     - LogOut-Funktion
   - Beobachten von Nickchanges
   
+  
   DB Struktur
   - Accountname
   - Passwort
@@ -38,7 +39,7 @@ def login_cmd(origin, args):
         account = self.getAccountByOrigin(origin)
         # FOR THE LULZ!
         self.login(origin, args[0], ' '.join(args[1:]))
-    
+
 @register("logout")
 def logout_cmd(origin, args):
     self.logout(origin)
@@ -81,7 +82,7 @@ def getServerAuthByOrigin(origin):
 def isLoggedIn(origin):
     account = self.getAccountByOrigin(origin)
     return (origin in self.getInfo(account, "loggedinas"))
-    
+
 def setLastActivity(account):
     """
       set last activity (timerless) to current ctime
@@ -93,8 +94,16 @@ def hashPass(password):
     h.update(name + password) #TODO salty pirate arr
     return h.hexdigest()
 
+viewLoggedInAs = chaos("UserAccLoggedInAs",
+    """
+        if (RegExp(doc.loggedinas).test(%s)) {
+            emit("penis",doc)
+        }
+    """ % phrase
+
 # Penis Penis Penis! Macht das Davenport Zeug
 def getInfo(account, data):
-    """"""
+    
+
 def setInfo(account, data, value):
     """"""
