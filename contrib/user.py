@@ -19,6 +19,7 @@
     "type": "user",
     "accountname": "Janno",
     "loggedinas": "jannotb",
+    "lastactivity": "1264931913.209357",
     "qauth": "janno",
     "tikkle": {
         "login": "ich.bin.nur.der(.*).koch",
@@ -31,13 +32,27 @@
 __version__ = "0.1a"
 __requires__ = ['irc',"channel"]
 
+
+viewAccount = chaos("UserAccount",
+    """
+        if (doc.type == "user") {
+            emit(doc.accountname,doc)
+        }
+    """)
+
+viewAccountByOrigin = chaos("UserAccountByOrigin",
+    """
+        if (doc.type == "user") {
+            emit(doc.loggedinas,doc)
+        }
+    """)
+
 @register("login")
 def login_cmd(origin, args):
     if (args == []):
         self.identify(origin)
     else:
         account = self.getAccountByOrigin(origin)
-        # FOR THE LULZ!
         self.login(origin, args[0], ' '.join(args[1:]))
 
 @register("logout")
@@ -53,7 +68,7 @@ def identify(origin):
     if (serverauth and self.isLoggedIn(account) == False):
         self.logout(origin)
         self.setInfo(account, "loggedinas", self.getInfo(account, "loggedinas").append(origin))
-    dispatch_event("user.loggedin", name) # >> 4
+        dispatch_event("user.loggedin", name) # >> 4
 
 def login(origin, name, password):
     account = self.getAccountByOrigin(origin)
@@ -74,7 +89,9 @@ def adduser():
     """"""
 
 def getAccountByOrigin(origin):
-    return (False) if True else None;
+    if (isLoggedIn(origin)):
+        account = viewAccount()[origin]["accountname"]
+        return account
 
 def getServerAuthByOrigin(origin):
     return channel.isAuthed(origin.nick)
@@ -84,22 +101,14 @@ def isLoggedIn(origin):
     return (origin in self.getInfo(account, "loggedinas"))
 
 def setLastActivity(account):
-    """
-      set last activity (timerless) to current ctime
-    """
+    import time
+    setInfo(account, "lastactivity", time.time())
 
 def hashPass(password):
     import hashlib
     h = hashlib.new('sha256')
     h.update(name + password) #TODO salty pirate arr
     return h.hexdigest()
-
-viewAccount = chaos("UserAccount",
-    """
-        if (doc.type == "user") {
-            emit(doc.accountname,doc)
-        }
-    """)
 
 # Penis Penis Penis! Macht das Davenport Zeug
 def getInfo(account, data):
