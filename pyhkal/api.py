@@ -46,6 +46,7 @@ expose("twist", pyhkal.engine.add_service)
 def send(message, dest=None):
     pyhkal.engine.dispatch_event('send', message)
 
+expose(pyhkal.davenport.chaos)
 expose(pyhkal.davenport.remember)
 expose(pyhkal.engine.dispatch_command)
 expose(pyhkal.engine.dispatch_event)
