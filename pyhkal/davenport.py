@@ -44,10 +44,15 @@ def remember(breadcrumbs, default=_none):
         raise
 
 def chaos(by, map_fun, reduce_fun=None):
-    return couchdb.design.ViewDefinition(by, "view",
+    view = couchdb.design.ViewDefinition(by, "view",
         "function(doc){ %s }" % map_fun,
         "function(keys, values){ %s }" % reduce_fun if reduce_fun else None
     )
+    view.get_doc(_sofa)
+    return lambda:view(_sofa)
 
 def lookup(title):
     return _sofa[title]
+
+def stash(document):
+    return _sofa.create(document)

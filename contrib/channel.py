@@ -1,8 +1,11 @@
-__version__ = "0.0a"
+
 __requires__ = ['irc']
 
-tube_getter = chaos('channels.channels', 'if(doc.type=="channel") emit')
-shit_getter = chaos('channels.nicks','peni')
+__version__ = "0.0a"
+
+tube_getter = chaos('channels.channels', 'if(doc.type=="channel") emit(doc.name, doc);')
+shit_getter = chaos('channels.nicks', 'if(doc.type=="nick") emit(doc.name, doc);')
+shit_by_tube_getter = chaos('channels.nicks_by_tube', 'if(doc.type=="nick") { for channel in doc.channels { emit(channel, doc);  } } ')
 
 names_done = {}
 
@@ -19,25 +22,33 @@ def flush_tubes():
 def add_tube(tname):
     put_doc({'type': 'channel', 'name': name})
     names_done[tname] = True
-    dispatch_event('irc.send', 'WHO %s %%na' % tname)
 
 @hook('irc.kicked')
 def remove_tube(tname):
     del tubes[tname]
 
-@hook('irc.isupport')
-def get_chan_modes(*_, **__):
-    global chan_mode_chars
-    chan_mode_chars = irc.options['CHANMODES'].split('=')
-
-    
-    
 
 @hook('irc.setmode')
-def set_mode(tname, user, set, mode, args):
+def set_mode(tname, user, set, modes, args):
     args = list(args)
-    tube = chaos()
-    
+    tube = tube_getter()[tname]
+    while modes:
+        mode = mode.pop()
+        if not (mode in irc.chanmodes['noParam']):
+            tube['modes']['mode'] = args.pop()
+    order(tube)
+
+@hook('irc.delmode')
+def set_mode(tname, user, set, modes, args):
+    args = list(args)
+    tube = tube_getter()[tname]
+    while modes:
+        mode = mode.pop()
+        if not ((mode in irc.chanmodes['noParam']) or (mode in irc.chanmodes['setParam'])):
+            tube['modes']['mode'] = args.pop()
+    order(tube)
+
+
 
 def get_modes_by_shit(shit):
     mode_chars = ['@', '+', '%']
@@ -56,7 +67,7 @@ def add_names(tname, names):
             remove_shit_from_tube(tname, shit)
     for name in names:
         modes = get_modes_by_shit(name)
-        shits = shit_getter()
+        shits = shit_getter()[name]
         if name in shits:
             shit = shits[name]
         else:
