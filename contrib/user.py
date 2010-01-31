@@ -8,13 +8,7 @@
   - Beobachten von Nickchanges
   
   
-  DB Struktur
-  - Accountname
-  - Passwort
-  - Server-Authname
-  - LoggedIn-Nick
-  - mod-einstellungen als Unterbaum
-  
+  DB Struktur  
   {
     "type": "user",
     "accountname": "Janno",
@@ -29,7 +23,9 @@
   }
 """
 
-__version__ = "0.1a"
+import string,random,time,hashlib
+
+__version__ = "0.1c"
 __requires__ = ['irc',"channel"]
 
 
@@ -47,6 +43,9 @@ viewAccountByOrigin = chaos("UserAccountByOrigin",
         }
     """)
 
+#
+# Login
+#
 @register("login")
 def login_cmd(origin, args):
     if (args == []):
@@ -55,13 +54,24 @@ def login_cmd(origin, args):
         account = self.getAccountByOrigin(origin)
         self.login(origin, args[0], ' '.join(args[1:]))
 
-@register("logout")
-def logout_cmd(origin, args):
-    self.logout(origin)
+def login(origin, name, password):
+    """
+      Simple user:password login
+      Dispatches event: user.loggedin <name>
+                          or
+                        user.loginfailed <name>
+    """
+    if (getInfo(name, "password") == self.hashPass(name, password)):
+        self.logout(origin)
+        self.setInfo(name, "loggedinas", self.getInfo(name, "loggedinas").append(origin))
+        dispatch_event("user.loggedin", name)
+    else:
+        dispatch_event("user.loginfailed", name)
 
 def identify(origin):
     """
       Tries to identify the user without him having to log in using a password.
+      Dispatches event: user.loggedin <name>
     """
     serverauth = self.getServerAuthByOrigin(origin)
     account = self.getAccountByOrigin(origin)
@@ -70,24 +80,61 @@ def identify(origin):
         self.setInfo(account, "loggedinas", self.getInfo(account, "loggedinas").append(origin))
         dispatch_event("user.loggedin", name) # >> 4
 
-def login(origin, name, password):
-    account = self.getAccountByOrigin(origin)
-    if (getInfo(account, "password") == self.hashPass(name, password)):
-        self.logout(origin)
-        self.setInfo(account, "loggedinas", self.getInfo(account, "loggedinas").append(origin))
-        dispatch_event("user.loggedin", name)
-        irc.send("Logged in.")
-    else:
-        irc.send("Login failed")
+#
+# Logout
+#
+@register("logout")
+def logout_cmd(origin, args):
+    self.logout(origin)
 
 def logout(account):
+    """
+      Dispatches event: user.loggedout <name>
+    """
     if (isLoggedIn(account)):
         self.setInfo(account, "loggedinas", self.getInfo(account, "loggedinas").remove(origin))
         dispatch_event("user.loggedout", name)
 
-def adduser():
-    """"""
+def setLastActivity(account):
+    """
+      Dispatches event: user.seen <ctime>
+    """
+    now = time.time()
+    setInfo(account, "lastactivity", now)
+    dispatch_event("user.seen", now)
 
+def setLastActivityWithTimer(account):
+    """
+      on activity do:
+        if timer exists: nothing
+        if no timer exists: create one to set "lastactivity" to time.time() in 30 minutes
+    """
+    now = time.time()
+    return None
+    # in 30 mins: setInfo(account, "lastactivity, now)
+    # dispatch_event("user.seen", now)
+
+def adduser(accountname, qauth):
+    """
+      Returns: a random password
+      Dispatches event: user.added <accountname>
+    """
+    if (getInfo(accountname, "accountname")):
+        dispatch_event("user.addfail", "User already exists")
+        return none
+    else:
+        user = stash()
+        user["type"] = user
+        user["accoutname"] = accountname
+        password = makePass()
+        user["password"] = hashPass(password)
+        user["qauth"] = qauth
+        dispatch_event("user.added", accountname)
+        return password
+
+#
+#  Helper
+#
 def getAccountByOrigin(origin):
     if (isLoggedIn(origin)):
         account = viewAccount()[origin]["accountname"]
@@ -100,17 +147,16 @@ def isLoggedIn(origin):
     account = self.getAccountByOrigin(origin)
     return (origin in self.getInfo(account, "loggedinas"))
 
-def setLastActivity(account):
-    import time
-    setInfo(account, "lastactivity", time.time())
-
 def hashPass(password):
-    import hashlib
     h = hashlib.new('sha256')
     h.update(name + password) #TODO salty pirate arr
     return h.hexdigest()
 
-# Penis Penis Penis! Macht das Davenport Zeug
+def makePass(minlength=8,maxlength=25):
+    length=random.randint(minlength,maxlength)
+    letters=string.ascii_letters+string.digits
+    return ''.join([random.choice(letters) for _ in range(length)])
+
 def getInfo(account, data):
     return viewAccount()[account][data]
 
