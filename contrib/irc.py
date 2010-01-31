@@ -45,11 +45,9 @@ __settings__ = dict(
 def send_message(message, dest):
     for d in dest:
         if d.type == "query":
-            #+ spam queue für queries
-            socket.send("PRIVMSG %s :%s" % (d, message))
+            dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.user, message))
         elif d.type == "channel":
-            #+ spam queue für channels
-            socket.send("PRIVMSG %s :%s" % (d, message))
+            dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.public, message))
 
 class IRCClient(irc.IRCClient, object):
     def __init__(self):
@@ -86,13 +84,17 @@ class IRCClient(irc.IRCClient, object):
 
     def privmsg(self, sender, recip, message): # used when RECEIVING a message
         irc.IRCClient.privmsg(self, sender, recip, message)
+        if recip == self.nickname:
+            origin = Origin('query', sender, recip)
+        else:
+            origin = Origin('channel', sender, recip)
         dispatch_event("irc.privmsg", sender, recip, message)
+        dispatch_event("privmsg", origin, message)
         if message.startswith(self.prefix):
             if " " in message:
                 command, args = message.split(None, 1)
             else:
                 command, args = message, []
-            origin = Origin('channel', sender, recip)
             dispatch_command(origin, command[len(self.prefix):], args)
 
     def signedOn(self):
@@ -177,8 +179,6 @@ class IRCClient(irc.IRCClient, object):
             self.send("WHO %s, %nafuhr,%s" % (target, ID))
      
 
-
-
 class IRCClientFactory(protocol.ReconnectingClientFactory):
     protocol = IRCClient
     initialDelay = 10.0
@@ -193,6 +193,7 @@ class IRCClientFactory(protocol.ReconnectingClientFactory):
         p.password = str(remember("irc key", None))
         p.prefix = str(remember("irc prefix", DEFAULT_PREFIX))
         p.channels = map(str, remember("irc channels", []))
+        p.lineRate = 1/self.factor;
         return p
     def clientConnectionFailed(self, connector, reason):
         print reason.value
