@@ -51,3 +51,6 @@ def chaos(by, map_fun, reduce_fun=None):
 
 def lookup(title):
     return _sofa[title]
+
+def stash(document):
+    _sofa.create(document)
