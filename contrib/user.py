@@ -94,16 +94,17 @@ def hashPass(password):
     h.update(name + password) #TODO salty pirate arr
     return h.hexdigest()
 
-viewLoggedInAs = chaos("UserAccLoggedInAs",
+viewAccount = chaos("UserAccount",
     """
-        if (RegExp(doc.loggedinas).test(%s)) {
-            emit("penis",doc)
+        if (doc.type == "user") {
+            emit(doc.accountname,doc)
         }
-    """ % phrase
+    """)
 
 # Penis Penis Penis! Macht das Davenport Zeug
 def getInfo(account, data):
-    
+    return viewAccount()[account][data]
 
 def setInfo(account, data, value):
-    """"""
+    if (data == "password"): value = hashPass(value)
+    viewAccount()[account][data] = value
