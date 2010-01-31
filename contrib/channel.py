@@ -1,9 +1,5 @@
-
+__version__ = "0.0a"
 __requires__('irc')
-
-hi (
-    version = "0.0a",
-)
 
 tube_getter = chaos('channels.channels', 'if(doc.type=="channel") emit')
 shit_getter = chaos('channels.nicks')
