@@ -48,6 +48,7 @@ def send(message, dest=None):
 
 expose(pyhkal.davenport.chaos)
 expose(pyhkal.davenport.remember)
+expose(pyhkal.davenport.stash)
 expose(pyhkal.engine.dispatch_command)
 expose(pyhkal.engine.dispatch_event)
 expose("thread", pyhkal.fred.threaded)
