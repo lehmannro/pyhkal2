@@ -193,6 +193,7 @@ class IRCClientFactory(protocol.ReconnectingClientFactory):
         p.password = str(remember("irc key", None))
         p.prefix = str(remember("irc prefix", DEFAULT_PREFIX))
         p.channels = map(str, remember("irc channels", []))
+        p.lineRate = 1/self.factor;
         return p
     def clientConnectionFailed(self, connector, reason):
         print reason.value
