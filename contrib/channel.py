@@ -5,7 +5,7 @@ __version__ = "0.0a"
 
 tube_getter = chaos('channels.channels', 'if(doc.type=="channel") emit(doc.name, doc);')
 shit_getter = chaos('channels.nicks', 'if(doc.type=="nick") emit(doc.name, doc);')
-shit_by_tube_getter = chaos('channels.nicks_by_tube', 'if(doc.type=="nick") { for channel in doc.channels { emit(channel, doc);  } } ')
+#shit_by_tube_getter = chaos('channels.nicks_by_tube', 'if(doc.type=="nick") { for channel in doc.channels { emit(channel, doc);  } } ')
 
 names_done = {}
 
@@ -22,6 +22,9 @@ def flush_tubes():
 def add_tube(tname):
     put_doc({'type': 'channel', 'name': name})
     names_done[tname] = True
+    def callback(results):
+        map(fill_who_info, results)
+    irc.getInfo(tname, )
 
 @hook('irc.kicked')
 def remove_tube(tname):
@@ -53,10 +56,10 @@ def set_mode(tname, user, set, modes, args):
 def get_modes_by_shit(shit):
     mode_chars = ['@', '+', '%']
     modes = []
-    while shit and shit[0]:
+    while shit and shit[0] in mode_chars:
         modes.append(shit[0])
         shit = shit[1:]
-    return modes
+    return modes, shit
 
 
 @hook('irc.names')
@@ -66,10 +69,10 @@ def add_names(tname, names):
         for name in shits_by_tube(tname):
             remove_shit_from_tube(tname, shit)
     for name in names:
-        modes = get_modes_by_shit(name)
-        shits = shit_getter()[name]
-        if name in shits:
-            shit = shits[name]
+        modes, name = get_modes_by_shit(name)
+        shits = shit_getter()[name].rows()
+        if shits:
+            shit = shits[0]
         else:
             shit = {'type': 'nick','nick': name, 'channels': {}}
         shit['channels'][tname] = {'modes': modes}
