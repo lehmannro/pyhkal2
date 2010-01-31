@@ -53,4 +53,4 @@ def lookup(title):
     return _sofa[title]
 
 def stash(document):
-    _sofa.create(document)
+    return _sofa.create(document)
