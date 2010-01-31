@@ -12,7 +12,7 @@ import pyhkal.shopping
 api = {}
 def expose(item_or_name, item=None):
     """
-    >>> expose(obj)
+    >>> expose(obj) # requires obj to have __name__ attribute
     >>> @expose
     ... def func(): pass
     ...
@@ -24,25 +24,6 @@ def expose(item_or_name, item=None):
         api[item_or_name.__name__] = item_or_name
 
 @expose
-def hi(**meta):
-    """
-    >>> hi(
-    ...     version = "1.0",
-    ...     depends = [
-    ...         "modname",
-    ...     ],
-    ... )
-
-    """
-    frame = inspect.currentframe().f_back
-    mod = frame.f_globals
-    if 'depends' in meta:
-        for dependency in meta['depends']:
-            dep = LooseVersion(dependency).version[0]
-            mod[dep] = pyhkal.shopping.buy(dep)
-    mod['__metadata__'] = meta
-
-@expose
 def hook(event, *args):
     def deco(func):
         pyhkal.engine.add_listener(event, func)
@@ -50,10 +31,14 @@ def hook(event, *args):
     return deco
 
 @expose
-def register(func):
-    name = func.__name__
-    pyhkal.engine.add_command(name, func)
-    return func
+def register(func_or_name):
+    if isinstance(func_or_name, basestring):
+        def wrapper(func):
+            pyhkal.engine.add_command(func_or_name, func)
+            return func
+        return wrapper
+    pyhkal.engine.add_command(func_or_name.__name__, func_or_name)
+    return func_or_name
 
 expose("twist", pyhkal.engine.add_service)
 
@@ -61,6 +46,7 @@ expose("twist", pyhkal.engine.add_service)
 def send(message, dest=None):
     pyhkal.engine.dispatch_event('send', message)
 
+expose(pyhkal.davenport.chaos)
 expose(pyhkal.davenport.remember)
 expose(pyhkal.engine.dispatch_command)
 expose(pyhkal.engine.dispatch_event)

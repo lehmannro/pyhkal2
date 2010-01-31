@@ -1,6 +1,4 @@
-hi(
-    version = "0.1",
-)
+__version__ = "0.1"
 
 @hook("PRIVMSG", r"\b(\w+)\+\+") #+ unterschiedliche funktionen weil andere signatur
 @register("++")
