@@ -35,7 +35,7 @@ def hook(event, *args, **kwargs):
     # @hook('irc.sendmsg', recip=re1, msg=re2) ODER @hook('irc.sendmsg', re3) <- matcht auf sender
     # def handlemsg(sender,recip,msg) <- wird nur aufgerufen, wenn regex im Hook auch erfüllt ist!
     def deco(func):
-        funcargs = getargspec(func).args # the new FunCarGS - order now!
+        funcargs = getargspec(func)[0] # the new FunCarGS - order now!
         # dispatch_event('irc.privmsg', sender, recip, msg) --> ['sender','recip','msg']
         def matching( *margs, **mkwargs):
             params = dict(zip(funcargs, margs))
@@ -58,7 +58,7 @@ def hook(event, *args, **kwargs):
 
             func(**params)
 
-        pyhkal.engine.add_listener(event, func)
+        pyhkal.engine.add_listener(event, matching)
         return matching
     return deco
 
