@@ -47,6 +47,7 @@ def send(message, dest=None):
     pyhkal.engine.dispatch_event('send', message)
 
 expose(pyhkal.davenport.chaos)
+expose(pyhkal.davenport.order)
 expose(pyhkal.davenport.remember)
 expose(pyhkal.davenport.stash)
 expose(pyhkal.engine.dispatch_command)
