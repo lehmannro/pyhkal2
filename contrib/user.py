@@ -24,6 +24,7 @@
 """
 
 import string,random,time,hashlib
+#from twisted.internet import reactor
 
 __version__ = "0.1c"
 __requires__ = ['irc',"channel"]
@@ -108,11 +109,12 @@ def setLastActivityWithTimer(account):
       on activity do:
         if timer exists: nothing
         if no timer exists: create one to set "lastactivity" to time.time() in 30 minutes
+
+      twisted reactor call later
+        returns object can be cancelled
     """
     now = time.time()
-    return None
-    # in 30 mins: setInfo(account, "lastactivity, now)
-    # dispatch_event("user.seen", now)
+    #TODO: reactor.callLater(1800, setInfo(account, "lastactivity", now))
 
 def adduser(accountname, qauth):
     """
