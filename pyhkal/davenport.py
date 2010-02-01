@@ -52,7 +52,7 @@ def chaos(by, map_fun, reduce_fun=None):
     return view(_sofa)
 
 def order(document):
-    _sofa.update(document)
+    _sofa.update([document])
 
 def lookup(title):
     return _sofa[title]
