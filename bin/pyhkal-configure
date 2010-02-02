@@ -8,7 +8,7 @@ from pyhkal.davenport import REMEMBER as UUID, DATABASE
 def yaml2couch(path=None, couch=None):
     config = yaml.safe_load(open(path) if path else sys.stdin.read())
     db = couchdb.Server(couch or couchdb.client.DEFAULT_BASE_URI)[DATABASE]
-    old = db[UUID]
+    old = db.get(UUID, {})
     old.update(config)
     db[UUID] = old
 
