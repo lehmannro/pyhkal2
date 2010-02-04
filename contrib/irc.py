@@ -203,7 +203,7 @@ class IRCClientFactory(protocol.ReconnectingClientFactory):
 def establish_connection():
     factory = IRCClientFactory()
     server = remember("irc server")
-    port = remember("irc port")
+    port = remember("irc port", DEFAULT_PORT)
     #+ support SSL
     service = internet.TCPClient(server, port, factory)
     twist(service)
