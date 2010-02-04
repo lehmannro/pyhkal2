@@ -23,7 +23,7 @@ virtualenv: $(VIRTUALENV) \
 $(VIRTUALENV):
 	virtualenv --clear --distribute --no-site-packages "$(VIRTUALENV)"
 $(VIRTUALENV)/lib/python$(PYVER)/site-packages/twisted:
-	$(VIRTUALENV)/bin/pip -q install twisted
+	$(VIRTUALENV)/bin/pip -q install -e "svn+svn://svn.twistedmatrix.com/svn/Twisted/trunk/"
 $(VIRTUALENV)/src/couchdb:
 	$(VIRTUALENV)/bin/pip -q install -e "hg+https://couchdb-python.googlecode.com/hg/#egg=couchdb"
 $(VIRTUALENV)/lib/python$(PYVER)/site-packages/yaml:
