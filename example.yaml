@@ -1,3 +1,9 @@
+irc:
+  server: irc.de.quakenet.org
+  port: 6667
+  channels:
+    - "#pyhkal"
+
 modules:
   - irc
   - stfu
