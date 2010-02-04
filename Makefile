@@ -18,6 +18,7 @@ test: virtualenv
 virtualenv: $(VIRTUALENV) $(VIRTUALENV)/lib/python$(PYVER)/site-packages/pyhkal
 $(VIRTUALENV):
 	virtualenv --clear --distribute --no-site-packages "$(VIRTUALENV)"
+	$(VIRTUALENV)/bin/pip -q install PyYAML
 	$(VIRTUALENV)/bin/pip -q install -e "hg+https://couchdb-python.googlecode.com/hg/#egg=couchdb"
 	$(VIRTUALENV)/bin/pip -q install twisted
 $(VIRTUALENV)/lib/python$(PYVER)/site-packages/pyhkal: $(SOURCES)
