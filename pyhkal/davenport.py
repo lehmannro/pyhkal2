@@ -22,7 +22,7 @@ def use(location=None):
 
     """
     global _sofa
-    server = couchdb.client.Server(location or couchdb.client.DEFAULT_BASE_URI)
+    server = couchdb.client.Server(location or couchdb.client.DEFAULT_BASE_URL)
     try:
         _sofa = server[DATABASE]
     except couchdb.client.ResourceNotFound:
