@@ -69,7 +69,7 @@ def add_names(tname, names):
         # handle nicks that are no longer on this channel 
     for name in names:
         modes, name = get_modes_by_shit(name)
-        shits = shit_getter()[name].rows
+        shits = shit_getter[name].rows
         if shits:
             shit = shits[0]
         else:
@@ -87,7 +87,7 @@ def who_reply(resultdict):
     pass 
 
 def get_auth_nick(name, callback):
-    shits = shit_getter()[name].rows
+    shits = shit_getter[name].rows
     if len(shits) == 1:
         return shits[0]['authnick']
     else:
