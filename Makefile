@@ -15,12 +15,19 @@ test: virtualenv
 	cd "$(VIRTUALENV)"; \
 	./bin/trial pyhkal.test
 
-virtualenv: $(VIRTUALENV) $(VIRTUALENV)/lib/python$(PYVER)/site-packages/pyhkal
+virtualenv: $(VIRTUALENV) \
+		$(VIRTUALENV)/lib/python$(PYVER)/site-packages/twisted \
+		$(VIRTUALENV)/src/couchdb \
+		$(VIRTUALENV)/lib/python$(PYVER)/site-packages/yaml \
+		$(VIRTUALENV)/lib/python$(PYVER)/site-packages/pyhkal
 $(VIRTUALENV):
 	virtualenv --clear --distribute --no-site-packages "$(VIRTUALENV)"
-	$(VIRTUALENV)/bin/pip -q install PyYAML
-	$(VIRTUALENV)/bin/pip -q install -e "hg+https://couchdb-python.googlecode.com/hg/#egg=couchdb"
+$(VIRTUALENV)/lib/python$(PYVER)/site-packages/twisted:
 	$(VIRTUALENV)/bin/pip -q install twisted
+$(VIRTUALENV)/src/couchdb:
+	$(VIRTUALENV)/bin/pip -q install -e "hg+https://couchdb-python.googlecode.com/hg/#egg=couchdb"
+$(VIRTUALENV)/lib/python$(PYVER)/site-packages/yaml:
+	$(VIRTUALENV)/bin/pip -q install PyYAML
 $(VIRTUALENV)/lib/python$(PYVER)/site-packages/pyhkal: $(SOURCES)
 	$(VIRTUALENV)/bin/python setup.py --quiet install
 
