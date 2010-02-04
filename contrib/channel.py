@@ -66,8 +66,7 @@ def get_modes_by_shit(shit):
 def add_names(tname, names):
     if names_done:
         names_done[tname] = False
-        for name in shits_by_tube(tname):
-            remove_shit_from_tube(tname, shit)
+        # handle nicks that are no longer on this channel 
     for name in names:
         modes, name = get_modes_by_shit(name)
         shits = shit_getter()[name].rows
