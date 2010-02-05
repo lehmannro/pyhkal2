@@ -123,22 +123,6 @@ class IRCClient(irc.IRCClient, object):
         irc.IRCClient.nickChanged(self, nick)
         print "WHWEHEHE ", nick, "(%s)" % self.nickname
 
-    def isupport(self, options):
-        """['CPRIVMSG', 'MAXCHANNELS=20', 'CHANMODES=b,k,l,imnpstrDducCNMT', ...]"""
-        irc.IRCClient.isupport(self, options)
-        self.serveroptions = {}
-        for option in options:
-            s = option.split('=')
-            self.serveroptions[s[0]] = s[1] if len(s) == 2 else None
-        if "CHANMODES" in self.serveroptions:
-            self.chanmodes = dict(zip(('addressModes', 'param', 'setParam', 'noParam'), self.serveroptions['CHANMODES'].split(',')) )
-        else:
-            self.chanmodes = { 'addressModes':'b', 'param':'k', 'setParam':'l', 'noParam':'pimnst' } # fallback
-        if "PREFIX" in self.serveroptions:
-            self.serveroptions['PREFIX'] = self.serveroptions['PREFIX'].split('(')[1].split(')')  # e.g. ['ov', '@+']
-        else:
-            self.serveroptions['PREFIX'] = ('ov', '@+') # fallback
-
     def lineReceived(self, data): 
         irc.IRCClient.lineReceived(self, data)
         print ">> ", data
