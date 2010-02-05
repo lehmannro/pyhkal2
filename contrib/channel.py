@@ -37,12 +37,12 @@ def set_mode(tname, user, set, modes, args):
     tube = tube_getter()[tname]
     while modes:
         mode = mode.pop()
-        if not (mode in irc.chanmodes['noParam']):
+        if not (mode in irc.chanmodes['noParam']): #FIXME see below
             tube['modes']['mode'] = args.pop()
     order(tube)
 
 @hook('irc.delmode')
-def set_mode(tname, user, set, modes, args):
+def set_mode(tname, user, set, modes, args): #FIXME use irc's supported.getFeature('CHANMODES') 
     args = list(args)
     tube = tube_getter()[tname]
     while modes:
@@ -54,7 +54,7 @@ def set_mode(tname, user, set, modes, args):
 
 
 def get_modes_by_shit(shit):
-    mode_chars = ['@', '+', '%']
+    mode_chars = ['@', '+', '%'] #FIXME use irc's supported.getFeature('PREFIX', default={'o': ('@', 0), 'v': ('+', 1)} ) 
     modes = []
     while shit and shit[0] in mode_chars:
         modes.append(shit[0])
