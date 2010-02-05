@@ -96,6 +96,15 @@ class IRCClient(irc.IRCClient, object):
             else:
                 command, args = message, []
             dispatch_command(origin, command[len(self.prefix):], args)
+    def noticed(self, sender, recip, message):
+        # the original noticed-function just passes its arguments towards privmsg() - we dont want to do that!
+        #FIXME the lines below are just copied from privmsg - how appropriate this is I dont know
+        if recip == self.nickname:
+            origin = Origin('query', sender, recip)
+        else:
+            origin = Origin('channel', sender, recip)
+        dispatch_event("irc.notice", sender, recip, message) # remember, that we MUST NEVER respont
+        dispatch_event("notice", origin, message)            # automatically on notices
 
     def signedOn(self):
         irc.IRCClient.signedOn(self)
