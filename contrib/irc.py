@@ -103,14 +103,16 @@ class IRCClient(irc.IRCClient, object):
         dispatch_event("irc.signon")
         for channel in self.channels:
             self.join(channel)
+
     def modeChanged(self, user, channel, set, modes, args):
         dispatch_event("irc.modechange", user, channel, set, modes, args)
         if set:
             dispatch_event("irc.setmode", user, channel, modes, args)
         else:
             dispatch_event("irc.delmode", user, channel, modes, args)
+
     def nickChanged(self, nick):
-        print "WHWEHEHE ", nick, "(%s)" % self.nickname
+        irc.IRCClient.nickChanged(self, nick)
 
     def isupport(self, options):
         """['CPRIVMSG', 'MAXCHANNELS=20', 'CHANMODES=b,k,l,imnpstrDducCNMT', ...]"""
@@ -134,6 +136,9 @@ class IRCClient(irc.IRCClient, object):
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
+        if numeric == "001":
+            ":clanserver4u1.de.quakenet.org 001 PyHKAL :Welcome to the QuakeNet IRC Network, PyHKAL3"
+            self.nickname = spacetuple[2]
         if numeric == '353': # name-answer
             ":clanserver4u1.de.quakenet.org 353 ChosenOne = #chan :@alice +bob charlie"
             dispatch_event("irc.names", spacetuple[4], colontuple[2].split(' ')) # warning: list contains prefixes: ['@ChosenOne','+npx', 'crosbow']
