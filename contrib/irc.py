@@ -71,10 +71,10 @@ class IRCClient(irc.IRCClient, object):
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
+        @hook("irc.send")
         def send(msg):
             print "Sending %s" % (msg,)
             self.sendLine(msg)
-        hook("irc.send")(send)
         self._send = send
 
     def kickedFrom(self, channel, kicker, message):
