@@ -103,12 +103,15 @@ class IRCClient(irc.IRCClient, object):
         for channel in self.channels:
             self.join(channel)
     def modeChanged(self, user, channel, set, modes, args):
+        irc.IRCClient.modeChanged(self, user, channel, set, modes, args)
+
         dispatch_event("irc.modechange", user, channel, set, modes, args)
         if set:
             dispatch_event("irc.setmode", user, channel, modes, args)
         else:
             dispatch_event("irc.delmode", user, channel, modes, args)
     def nickChanged(self, nick):
+        irc.IRCClient.nickChanged(self, nick)
         print "WHWEHEHE ", nick, "(%s)" % self.nickname
 
     def isupport(self, options):
