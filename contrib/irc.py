@@ -45,7 +45,8 @@ __settings__ = dict(
 def send_message(message, dest):
     for d in dest:
         if d.type == "query":
-            dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.user, message))
+            FIXME there should be a function to get the username from an address
+            dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.user.split("!")[0], message))
         elif d.type == "channel":
             dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.public, message))
 
