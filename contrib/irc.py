@@ -105,6 +105,8 @@ class IRCClient(irc.IRCClient, object):
             self.join(channel)
 
     def modeChanged(self, user, channel, set, modes, args):
+        irc.IRCClient.modeChanged(self, user, channel, set, modes, args)
+
         dispatch_event("irc.modechange", user, channel, set, modes, args)
         if set:
             dispatch_event("irc.setmode", user, channel, modes, args)
