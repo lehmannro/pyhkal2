@@ -97,6 +97,15 @@ class IRCClient(irc.IRCClient, object):
             else:
                 command, args = message, []
             dispatch_command(origin, command[len(self.prefix):], args)
+    def noticed(self, sender, recip, message):
+        # the original noticed-function just passes its arguments towards privmsg() - we dont want to do that!
+        #FIXME the lines below are just copied from privmsg - how appropriate this is I dont know
+        if recip == self.nickname:
+            origin = Origin('query', sender, recip)
+        else:
+            origin = Origin('channel', sender, recip)
+        dispatch_event("irc.notice", sender, recip, message) # remember, that we MUST NEVER respont
+        dispatch_event("notice", origin, message)            # automatically on notices
 
     def signedOn(self):
         irc.IRCClient.signedOn(self)
@@ -115,22 +124,6 @@ class IRCClient(irc.IRCClient, object):
 
     def nickChanged(self, nick):
         irc.IRCClient.nickChanged(self, nick)
-
-    def isupport(self, options):
-        """['CPRIVMSG', 'MAXCHANNELS=20', 'CHANMODES=b,k,l,imnpstrDducCNMT', ...]"""
-        irc.IRCClient.isupport(self, options)
-        self.serveroptions = {}
-        for option in options:
-            s = option.split('=')
-            self.serveroptions[s[0]] = s[1] if len(s) == 2 else None
-        if "CHANMODES" in self.serveroptions:
-            self.chanmodes = dict(zip(('addressModes', 'param', 'setParam', 'noParam'), self.serveroptions['CHANMODES'].split(',')) )
-        else:
-            self.chanmodes = { 'addressModes':'b', 'param':'k', 'setParam':'l', 'noParam':'pimnst' } # fallback
-        if "PREFIX" in self.serveroptions:
-            self.serveroptions['PREFIX'] = self.serveroptions['PREFIX'].split('(')[1].split(')')  # e.g. ['ov', '@+']
-        else:
-            self.serveroptions['PREFIX'] = ('ov', '@+') # fallback
 
     def lineReceived(self, data): 
         irc.IRCClient.lineReceived(self, data)
