@@ -16,12 +16,12 @@ test: virtualenv
 	./bin/trial pyhkal.test
 
 virtualenv: $(VIRTUALENV) \
-		$(VIRTUALENV)/lib/python$(PYVER)/site-packages/twisted \
+		$(VIRTUALENV)/src/twisted \
 		$(VIRTUALENV)/src/couchdb \
 		$(VIRTUALENV)/lib/python$(PYVER)/site-packages/pyhkal
 $(VIRTUALENV):
 	python -mvirtualenv --clear --distribute --no-site-packages "$(VIRTUALENV)"
-$(VIRTUALENV)/lib/python$(PYVER)/site-packages/twisted:
+$(VIRTUALENV)/src/twisted:
 	$(VIRTUALENV)/bin/pip -q install -e "svn+svn://svn.twistedmatrix.com/svn/Twisted/trunk/"
 $(VIRTUALENV)/src/couchdb:
 	$(VIRTUALENV)/bin/pip -q install -e "hg+https://couchdb-python.googlecode.com/hg/#egg=couchdb"
