@@ -20,7 +20,7 @@ virtualenv: $(VIRTUALENV) \
 		$(VIRTUALENV)/src/couchdb \
 		$(VIRTUALENV)/lib/python$(PYVER)/site-packages/pyhkal
 $(VIRTUALENV):
-	virtualenv --clear --distribute --no-site-packages "$(VIRTUALENV)"
+	python -mvirtualenv --clear --distribute --no-site-packages "$(VIRTUALENV)"
 $(VIRTUALENV)/lib/python$(PYVER)/site-packages/twisted:
 	$(VIRTUALENV)/bin/pip -q install -e "svn+svn://svn.twistedmatrix.com/svn/Twisted/trunk/"
 $(VIRTUALENV)/src/couchdb:
