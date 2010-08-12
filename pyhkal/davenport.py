@@ -27,6 +27,8 @@ def use(location=None):
         _sofa = server[DATABASE]
     except couchdb.client.ResourceNotFound:
         _sofa = server.create(DATABASE)
+    from base64 import b64encode
+    _sofa.resource.headers['Authorization'] = "Basic " + b64encode("guest:guest")
 
 _none = object()
 def remember(breadcrumbs, default=_none):
