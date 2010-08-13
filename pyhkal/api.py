@@ -2,16 +2,16 @@
 
 from functools import partial
 from inspect import getargspec, currentframe
-import types
 import re
 from pyhkal.engine import Pyhkal
 from pyhkal.shrink import Avatar
 
 api = {}
 def apply(service):
-    return dict((name, partial(func, service)
-        if isinstance(func, (types.FunctionType, types.MethodType)) else func)
-        for name, func in api.iteritems())
+    applied = dict((name, partial(func, service)) for name, func in api.iteritems())
+    applied['Avatar'] = Avatar
+    applied['davenport'] = service.davenport
+    return applied
 
 def expose(item_or_name, item=None):
     """
@@ -102,5 +102,3 @@ def remember(service, breadcrumbs, default=_none):
 
 expose(Pyhkal.dispatch_command)
 expose(Pyhkal.dispatch_event)
-
-expose(Avatar)
