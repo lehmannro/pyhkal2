@@ -99,4 +99,4 @@ def remember(service, breadcrumbs, default=_none):
 expose(Pyhkal.dispatch_command)
 expose(Pyhkal.dispatch_event)
 
-expose(lambda service:Avatar)
+expose("Avatar", lambda service:Avatar)
