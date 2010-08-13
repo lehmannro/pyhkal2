@@ -146,10 +146,11 @@ class IRCClient(irc.IRCClient, object):
 
     def privmsg(self, sender, recip, message): # used when RECEIVING a message
         irc.IRCClient.privmsg(self, sender, recip, message)
+        nick = sender.split("!",1)[0]
         if recip == self.nickname:
-            dispatch_event("privmsg", IRCMessage(self.nickdb[sender], IRCQuery(self.nickdb[sender]), message))
+            dispatch_event("privmsg", IRCMessage(self.nickdb[nick], IRCQuery(self.nickdb[nick]), message))
         else:
-            dispatch_event("privmsg", IRCMessage(self.nickdb[sender], self.chandb[recip], message))
+            dispatch_event("privmsg", IRCMessage(self.nickdb[nick], self.chandb[recip], message))
 
         #dispatch_event("privmsg", origin, message)
         #if message.startswith(self.prefix):
