@@ -22,4 +22,6 @@ class Davenport(paisley.CouchDB):
         #XXX reduce_fun
 #        "function(keys, values){ %s }" % reduce_fun if reduce_fun else None
         payload = "function(doc){ %s }" % map_fun
-        return self.addViews('_design/%s' % module, (by, payload))
+        def add_view(doc):
+            self.saveDoc(self.addViews(doc, {by: payload}))
+        self.openDoc('_design/%s' % module).addCallback(add_view)
