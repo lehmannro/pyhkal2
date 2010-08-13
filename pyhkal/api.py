@@ -1,18 +1,15 @@
 # encoding: utf-8
 
-import inspect
-from distutils.version import LooseVersion
-from twisted.application.service import Service
+from functools import partial
 from inspect import getargspec
 import re
 import pyhkal.davenport
-import pyhkal.engine
-import pyhkal.fred
-import pyhkal.origin
-import pyhkal.shopping
-
+from pyhkal.engine import Pyhkal
 
 api = {}
+def apply(service):
+    return dict((name, partial(func, service)) for name, func in api.iteritems())
+
 def expose(item_or_name, item=None):
     """
     >>> expose(obj) # requires obj to have __name__ attribute
@@ -21,13 +18,13 @@ def expose(item_or_name, item=None):
     ...
     >>> expose("name", obj)
     """
-    if item:
+    if item is not None:
         api[item_or_name] = item
     else:
         api[item_or_name.__name__] = item_or_name
 
 @expose
-def hook(event, *args, **kwargs):
+def hook(service, event, *args, **kwargs):
     args = map(re.compile, args)
     for k in kwargs.iterkeys():
         kwargs[k] = re.compile(kwargs[k])
@@ -53,37 +50,51 @@ def hook(event, *args, **kwargs):
                 match = v.search(value[k])
                 if not match:
                     return
-                else:    
+                else:
                     params[k] = match
 
             func(**params)
 
-        pyhkal.engine.add_listener(event, matching)
+        service.add_listener(event, matching)
         return matching
     return deco
 
 
 @expose
-def register(func_or_name):
+def register(service, func_or_name):
     if isinstance(func_or_name, basestring):
         def wrapper(func):
-            pyhkal.engine.add_command(func_or_name, func)
+            service.add_command(func_or_name, func)
             return func
         return wrapper
-    pyhkal.engine.add_command(func_or_name.__name__, func_or_name)
+    service.add_command(func_or_name.__name__, func_or_name)
     return func_or_name
 
-expose("twist", pyhkal.engine.add_service)
+expose(Pyhkal.twist)
 
 @expose
-def send(message, dest=None):
-    pyhkal.engine.dispatch_event('send', message)
+def chaos(service, name, script):
+    service.davenport.order(name, script)
 
-expose(pyhkal.davenport.chaos)
-expose(pyhkal.davenport.order)
-expose(pyhkal.davenport.remember)
-expose(pyhkal.davenport.stash)
-expose(pyhkal.engine.dispatch_command)
-expose(pyhkal.engine.dispatch_event)
-expose("thread", pyhkal.fred.threaded)
-expose(pyhkal.origin.Origin)
+@expose
+def send(service, message, dest=None):
+    service.dispatch_event('send', message)
+
+_none = object()
+@expose
+def remember(service, breadcrumbs, default=_none):
+    """Remember that random fact that popped into your head 2 AM in the
+    morning. For some weird reason, you need a sofa to remember.
+
+    """
+    config = service.screwdriver
+    try:
+        return reduce(lambda doc, value: doc[value],
+                breadcrumbs.split(), config)
+    except KeyError:
+        if default is not _none:
+            return default
+        raise
+
+expose(Pyhkal.dispatch_command)
+expose(Pyhkal.dispatch_event)

@@ -4,8 +4,7 @@
 import collections
 import weakref
 from _weakrefset import WeakSet
-
-try:
+try: # inject json as simplejson
     import json
 except ImportError:
     import simplejson
@@ -13,41 +12,45 @@ else:
     import sys
     sys.modules['simplejson'] = json
 
-from pyhkal import davenport, shopping
+from twisted.application import service
+from twisted.internet import reactor
+from pyhkal import shopping
+from pyhkal.davenport import Davenport
 
+class Pyhkal(service.Service):
+    def __init__(self, screwdriver):
+        self.screwdriver = screwdriver
 
-listeners = collections.defaultdict(WeakSet)
-#+ support subcommands
-commands = weakref.WeakValueDictionary()
-# dict of str -> (callback, dict of str -> (callback, dict ...))
-application = None
+    def startService(self):
+        #XXX reloadable
+        db = self.screwdriver['database']
+        self.davenport = Davenport(db['host'], 'pyhkal', db['username'],
+                db['password'], db['port'])
+        self.listeners = collections.defaultdict(WeakSet)
+        self.commands = weakref.WeakValueDictionary()
+        self.mall = shopping.checkout(self)
+        for mod in self.screwdriver['modules']:
+            shopping.buy(mod)
+        self.dispatch_event("startup")
 
-def run(app):
-    global application
-    application = app
-    sofa = davenport.Davenport() #XXX
-    for mod in sofa.remember("modules"):
-        shopping.buy(mod)
-    dispatch_event("startup")
+    def twist(self, host, port, factory):
+        reactor.connectTCP(host, port, factory)
 
-def add_service(service):
-    service.setServiceParent(application)
+    def add_listener(self, name, listener):
+        self.listeners[name].add(listener)
 
-def add_listener(event, listener):
-    listeners[event].add(listener)
+    def dispatch_event(self, name, *args):
+        for dispatcher in self.listeners[name]:
+            dispatcher(*args)
 
-def dispatch_event(event, *args):
-    for dispatcher in listeners[event]:
-        dispatcher(*args)
+    def add_command(self, command, listener):
+        #+ support subcommands
+        if command in self.commands:
+            raise SystemError
+        self.commands[command] = listener
 
-def add_command(command, listener, parent=None):
-    #+ support subcommands
-    if command in commands:
-        raise SystemError
-    commands[command] = listener
-
-def dispatch_command(origin, command, args):
-    #+ subcommand dispatch
-    #+ check for number of arguments
-    if command in commands:
-        commands[command](origin, args)
+    def dispatch_command(self, event, *args):
+        #+ subcommand dispatch
+        #+ check for number of arguments
+        if command in self.commands:
+            self.commands[command](event, *args)

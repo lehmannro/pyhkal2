@@ -8,13 +8,15 @@ import imp
 import os.path
 import pkgutil
 import sys
-import textwrap
 
 SHOPPING_MALL = "contrib"
 
 class OutOfStock(ImportError): pass
 
 class ShoppingMall(object):
+    def __init__(self, service):
+        self.service = service
+
     @staticmethod
     def get_paths():
         curdir = os.path.dirname(__file__)
@@ -24,9 +26,11 @@ class ShoppingMall(object):
         yield reldir("..", SHOPPING_MALL)
         #+ try remember("include")
         #+ try $PYHKALPATH?
+
     def find_module(self, fullname, path=None):
         if fullname.startswith('pyhkal:'):
             return self
+
     def load_module(self, fullname):
         #+ handle failure during module loading (should not happen but better
         #  safe than sorry). this might be tricky as we'd need to rollback
@@ -37,7 +41,8 @@ class ShoppingMall(object):
         mod = sys.modules.setdefault(fullname, imp.new_module(fullname))
         loader = pkgutil.ImpLoader(
             fullname, *imp.find_module(name, list(self.get_paths())))
-        from pyhkal.api import api
+        from pyhkal.api import apply
+        api = apply(self.service)
         mod.__dict__.update(api)
         mod.__loader__ = self
         mod.__file__ = loader.get_filename()
@@ -46,7 +51,10 @@ class ShoppingMall(object):
             buy(dep)
         return mod
 
-sys.meta_path.append(ShoppingMall())
+def checkout(customer):
+    mall = ShoppingMall(customer)
+    sys.meta_path.append(mall)
+    return mall
 
 def buy(what):
     if what == "love":
