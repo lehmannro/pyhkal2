@@ -4,3 +4,4 @@ build/
 MANIFEST
 pip-log.txt
 twistd.pid
+config.yaml
