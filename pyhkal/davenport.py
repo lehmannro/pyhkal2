@@ -3,61 +3,37 @@
 """
 Document storage.
 
-One davenport oughta be enough for anybody. (This module is a singleton.)
-
-The davenport described herein is both, a sofa and a desk.
 """
 
-DATABASE = 'pyhkal'
-REMEMBER = 'config'
+import paisley
+from base64 import b64encode
 
-import couchdb.client
-import couchdb.design
+class Davenport(paisley.CouchDB):
+    def __init__(self, host, db, user, passwd, port=5984):
+        paisley.CouchDB.__init__(self, host, port, dbName=db)
+        self.auth = "Basic %s:%s" % (user, passwd)
 
-_sofa = None
+    def _getPage(self, uri, **kwargs):
+        kwargs['Authorization'] = self.auth
+        return paisley.CouchDB._getPage(uri, **kwargs)
 
-def use(location=None):
-    """Start storing your documents in a davenport. `location` can be used to occupy a
-    remote davenport. Otherwise use your local desk.
+    _none = object()
+    def remember(self, breadcrumbs, default=_none):
+        """Remember that random fact that popped into your head 2 AM in the
+        morning. For some weird reason, you need a sofa to remember.
 
-    """
-    global _sofa
-    server = couchdb.client.Server(location or couchdb.client.DEFAULT_BASE_URL)
-    try:
-        _sofa = server[DATABASE]
-    except couchdb.client.ResourceNotFound:
-        _sofa = server.create(DATABASE)
-    from base64 import b64encode
-    _sofa.resource.headers['Authorization'] = "Basic " + b64encode("guest:guest")
+        """
+        config = self.lookup(REMEMBER)
+        try:
+            return reduce(lambda doc, value: doc[value],
+                    breadcrumbs.split(), config)
+        except KeyError:
+            if default is not _none:
+                return default
+            raise
 
-_none = object()
-def remember(breadcrumbs, default=_none):
-    """Remember that random fact that popped into your head 2 AM in the
-    morning. For some weird reason, you need a sofa to remember.
-
-    """
-    config = lookup(REMEMBER)
-    try:
-        return reduce(lambda doc, value: doc[value],
-                breadcrumbs.split(), config)
-    except KeyError:
-        if default is not _none:
-            return default
-        raise
-
-def chaos(by, map_fun, reduce_fun=None):
-    view = couchdb.design.ViewDefinition(by, "view",
-        "function(doc){ %s }" % map_fun,
-        "function(keys, values){ %s }" % reduce_fun if reduce_fun else None
-    )
-    syn = view.sync(_sofa)
-    return view(_sofa)
-
-def order(document):
-    _sofa.update([document])
-
-def lookup(title):
-    return _sofa[title]
-
-def stash(document):
-    return _sofa.create(document)
+    def order(self, module, by, map_fun, reduce_fun=None):
+        #XXX reduce_fun
+#        "function(keys, values){ %s }" % reduce_fun if reduce_fun else None
+        payload = "function(doc){ %s }" % map_fun
+        return self.addViews('_design/%s' % module, (by, payload))

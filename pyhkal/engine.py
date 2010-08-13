@@ -15,8 +15,8 @@ application = None
 def run(app):
     global application
     application = app
-    davenport.use()
-    for mod in davenport.remember("modules"):
+    sofa = davenport.Davenport() #XXX
+    for mod in sofa.remember("modules"):
         shopping.buy(mod)
     dispatch_event("startup")
 
