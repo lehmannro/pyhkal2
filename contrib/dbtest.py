@@ -2,4 +2,10 @@
 
 __requires__ = []
 
-chaos('dbtest', 'emit(doc);')
+chaos('dbtest', 'emit(doc, null);')
+
+def blafu(*args):
+    for arg in args:
+        print arg
+
+davenport.openView('dbtest', 'dbtest').addBoth(blafu)
