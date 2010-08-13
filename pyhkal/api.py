@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 from functools import partial
-from inspect import getargspec
+from inspect import getargspec, currentframe
 import types
 import re
 from pyhkal.engine import Pyhkal
@@ -77,7 +77,8 @@ expose(Pyhkal.twist)
 
 @expose
 def chaos(service, name, script):
-    service.davenport.order(name, script)
+    mod = currentframe().f_back.f_globals['__mod__']
+    service.davenport.order(mod, name, script)
 
 @expose
 def send(service, message, dest=None):
