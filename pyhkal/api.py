@@ -8,7 +8,9 @@ from pyhkal.shrink import Avatar
 
 api = {}
 def apply(service):
-    return dict((name, partial(func, service)) for name, func in api.iteritems())
+    return dict((name,
+        partial(func, service) if isinstance(func, type(lambda:0)) else func)
+        for name, func in api.iteritems())
 
 def expose(item_or_name, item=None):
     """
@@ -99,4 +101,4 @@ def remember(service, breadcrumbs, default=_none):
 expose(Pyhkal.dispatch_command)
 expose(Pyhkal.dispatch_event)
 
-expose("Avatar", lambda service:Avatar)
+expose(Avatar)
