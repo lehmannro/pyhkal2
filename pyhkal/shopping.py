@@ -43,6 +43,7 @@ class ShoppingMall(object):
             fullname, *imp.find_module(name, list(self.get_paths())))
         from pyhkal.api import apply
         api = apply(self.service)
+        mod.__mod__ = name
         mod.__dict__.update(api)
         mod.__loader__ = self
         mod.__file__ = loader.get_filename()
