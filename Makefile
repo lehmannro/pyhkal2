@@ -12,7 +12,11 @@ test: install
 	cd "$(VIRTUALENV)"; ./bin/activate; trial pyhkal.test
 
 check: install
-	$(VIRTUALENV)/bin/python -m compileall "$(VIRTUALENV)/lib/python*/site-packages/pyhkal/"
+	/bin/bash -c "cd '$(VIRTUALENV)'; bin/python -m compileall lib/python*/site-packages/pyhkal/"
+
+pylint: install; SH='/bin/bash'
+	cd "${VIRTUALENV}";\
+	for version in `echo lib/python*/site-packages/`; do cd "$${version}"; pylint pyhkal; done
 
 virtualenv:
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"

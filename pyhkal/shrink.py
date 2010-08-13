@@ -13,7 +13,7 @@ class Avatar(object):
     different media/transports
     """
 
-    def message(msg):
+    def message(self, msg):
         pass
 
 
