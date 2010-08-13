@@ -1,3 +1,6 @@
 var/
+dist/
 build/
+MANIFEST
 pip-log.txt
+twistd.pid
