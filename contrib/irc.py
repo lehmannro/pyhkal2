@@ -53,10 +53,10 @@ class IRCUser(Avatar):
         self.auth = auth
         self.realname = realname
 
-    def message(self, target, text):
-        dispatch_event("irc.sendmessage", target, text)
+    def message(self, text):
+        dispatch_event("irc.sendmessage", self.nick, text)
 
-class IRCChannel(Avatar):
+class IRCChannel(Location):
     def __init__(self, name):
         self.name = name
         self.nicklist = []
@@ -76,15 +76,27 @@ class IRCChannel(Avatar):
     def updateModes(self, modes): #xxx is not being called yet
         self.modes = set(list(modes.replace('+','')))
         """
-i joined :wersfda!~werwt@p4FE4D637.dipself.t-dialin.net JOIN #pyhkal
-topic is :servercentral.il.us.quakenet.org 332 wersfda #pyhkal :foo
-topic was set at :servercentral.il.us.quakenet.org 333 wersfda #pyhkal ChosenOne 1281713634
-:servercentral.il.us.quakenet.org 353 wersfda @ #pyhkal :wersfda PyHKAL2 jannotb @ChosenOne catbot fishbot @npx @Q
-:servercentral.il.us.quakenet.org 366 wersfda #pyhkal :End of /NAMES list.
-"""
-
+        i joined :wersfda!~werwt@p4FE4D637.dipself.t-dialin.net JOIN #pyhkal
+        topic is :servercentral.il.us.quakenet.org 332 wersfda #pyhkal :foo
+        topic was set at :servercentral.il.us.quakenet.org 333 wersfda #pyhkal ChosenOne 1281713634
+        :servercentral.il.us.quakenet.org 353 wersfda @ #pyhkal :wersfda PyHKAL2 jannotb @ChosenOne catbot fishbot @npx @Q
+        :servercentral.il.us.quakenet.org 366 wersfda #pyhkal :End of /NAMES list.
+        """
     def message(self, msg):
         dispatch_event("irc.sendmessage", self.name, msg)
+
+class IRCMessage(Event):
+    def __init__(self, avatar, location, text):
+        self.content = text
+        self.source = avatar
+        self.target = location
+
+class IRCQuery(Location):
+    def __init__(self, user)
+        self.user = user
+
+    def message(self, msg):
+        dispatch_event("irc.sendmessage", self.user.nick, msg)
 
 @hook("irc.sendmessage")
 def send_message(message, dest):
@@ -134,11 +146,11 @@ class IRCClient(irc.IRCClient, object):
 
     def privmsg(self, sender, recip, message): # used when RECEIVING a message
         irc.IRCClient.privmsg(self, sender, recip, message)
-        #if recip == self.nickname:
-        #    origin = Origin('query', sender, recip)
-        #else:
-        #    origin = Origin('channel', sender, recip)
-        #dispatch_event("irc.privmsg", sender, recip, message)
+        if recip == self.nickname:
+            dispatch_event("privmsg", IRCMessage(self.nickdb[sender], IRCQuery(self.nickdb[sender]), message))
+        else:
+            dispatch_event("privmsg", IRCMessage(self.nickdb[sender], self.chandb[recip], message))
+
         #dispatch_event("privmsg", origin, message)
         #if message.startswith(self.prefix):
         #    if " " in message:
@@ -310,12 +322,14 @@ ideas for irc.py
 
     - test für getInfo!!1
 
-    - on join
+    - on join (hab ich laub ich)
+    - on part/kick überprüfen, ob wir denjenigen noch "sehen".
+    -> insbesondere nicklist-updates in part,quit,join,kick,nick
 
     - prefix/serveroptions
         diskussion ob severoptions['PREFIX'] durch ein nonstring ersetzt werden sollte..
 
-
+     - users.quakenet.org automatisch in <user>.auth einbringen :)
 
 channel.py klugscheiß-todo
     - prefix/mode-chars sind konstant enthalten, statt auf irc.serveroptions zu gehen
