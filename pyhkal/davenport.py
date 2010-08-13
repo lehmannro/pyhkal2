@@ -5,6 +5,7 @@ Document storage.
 
 """
 
+from twisted.python.failure import Failure
 import paisley
 from base64 import b64encode
 
@@ -24,7 +25,7 @@ class Davenport(paisley.CouchDB):
         payload = "function(doc){ %s }" % map_fun
         docname = '_design/%s' % module
         def add_view(doc):
-            if isinstance(doc, Exception):
+            if isinstance(doc, Failure):
                 doc = {}
             self.addViews(doc, {by: payload})
             self.saveDoc(doc, docId=docname)
