@@ -12,6 +12,9 @@ run: install
 test: install
 	cd "$(VIRTUALENV)"; ./bin/activate; trial pyhkal.test
 
+check: install
+	$(VIRTUALENV)/bin/python -m compile "$(VIRTUALENV)/lib/python*/site-packages/pyhkal/"
+
 virtualenv:
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
 	$(VIRTUALENV)/bin/pip -q install Twisted
