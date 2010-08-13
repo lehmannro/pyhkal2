@@ -13,7 +13,7 @@ test: install
 	cd "$(VIRTUALENV)"; ./bin/activate; trial pyhkal.test
 
 check: install
-	$(VIRTUALENV)/bin/python -m compile "$(VIRTUALENV)/lib/python*/site-packages/pyhkal/"
+	$(VIRTUALENV)/bin/python -m compileall "$(VIRTUALENV)/lib/python*/site-packages/pyhkal/"
 
 virtualenv:
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
