@@ -8,3 +8,8 @@ class Event(object):
 
     def reply(self):
         pass
+
+
+class Location(object):
+    def message(self, msg):
+        pass
