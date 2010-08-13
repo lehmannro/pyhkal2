@@ -92,7 +92,7 @@ class IRCMessage(Event):
         self.target = location
 
 class IRCQuery(Location):
-    def __init__(self, user)
+    def __init__(self, user):
         self.user = user
 
     def message(self, msg):
