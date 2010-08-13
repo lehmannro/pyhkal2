@@ -5,10 +5,12 @@
 __version__ = 0.1
 
 from twisted.application import internet
-from twisted.internet import protocol, reactor
+from twisted.internet import protocol, reactor, defer
 from twisted.words.protocols import irc
 from itertools import cycle
 from types import MethodType
+from time import time # for channel timestamp
+
 
 DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
@@ -41,11 +43,55 @@ __settings__ = dict(
     )
 )
 
-@hook("send")
+class IRCUser(Avatar):
+    def __init__(self, hostmask, auth=None, realname=None):
+        self.hostmask = hostmask
+        self.nick, identandhost = self.hostmask.split('!', 1)
+        self.ident = identandhost.split('@',1)[0]
+        self.host = identandhost.split('@',1)[1]
+        self.ident = self.hostmask.split('!', 1)[0]
+        self.auth = auth
+        self.realname = realname
+
+    def message(self, target, text):
+        dispatch_event("irc.sendmessage", target, text)
+
+class IRCChannel(Avatar):
+    def __init__(self, name):
+        self.name = name
+        self.nicklist = []
+
+    def updateTopic(self, topic, nick, timestamp=None):
+        self.topic = topic
+        self.topictimestamp = timestamp
+        self.topicsetby = nick
+
+    def updateTopicTS(self, nick, ts):
+        self.topictimestamp  = ts
+        self.topicsetby = nick
+
+    def updateNames(self, nicklist): #xxx is not being called yet
+        self.nicklist.append(nicklist)
+
+    def updateModes(self, modes): #xxx is not being called yet
+        self.modes = set(list(modes.replace('+','')))
+        """
+i joined :wersfda!~werwt@p4FE4D637.dipself.t-dialin.net JOIN #pyhkal
+topic is :servercentral.il.us.quakenet.org 332 wersfda #pyhkal :foo
+topic was set at :servercentral.il.us.quakenet.org 333 wersfda #pyhkal ChosenOne 1281713634
+:servercentral.il.us.quakenet.org 353 wersfda @ #pyhkal :wersfda PyHKAL2 jannotb @ChosenOne catbot fishbot @npx @Q
+:servercentral.il.us.quakenet.org 366 wersfda #pyhkal :End of /NAMES list.
+"""
+
+    def message(self, msg):
+        dispatch_event("irc.sendmessage", self.name, msg)
+
+@hook("irc.sendmessage")
 def send_message(message, dest):
     for d in dest:
         if d.type == "query":
             # FIXME there should be a function to get the username from an address
+            # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
             dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.user.split("!")[0], message))
         elif d.type == "channel":
             dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.public, message))
@@ -68,6 +114,9 @@ class IRCClient(irc.IRCClient, object):
         self.whocounter = iter(cycle(xrange(1,1000)))
         self.whocalls = {}
         self.whoresults = {}
+        self.whoamount = 0
+        self.nickdb = {}
+        self.chandb = {}
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
@@ -85,27 +134,29 @@ class IRCClient(irc.IRCClient, object):
 
     def privmsg(self, sender, recip, message): # used when RECEIVING a message
         irc.IRCClient.privmsg(self, sender, recip, message)
-        if recip == self.nickname:
-            origin = Origin('query', sender, recip)
-        else:
-            origin = Origin('channel', sender, recip)
-        dispatch_event("irc.privmsg", sender, recip, message)
-        dispatch_event("privmsg", origin, message)
-        if message.startswith(self.prefix):
-            if " " in message:
-                command, args = message.split(None, 1)
-            else:
-                command, args = message, []
-            dispatch_command(origin, command[len(self.prefix):], args)
+        #if recip == self.nickname:
+        #    origin = Origin('query', sender, recip)
+        #else:
+        #    origin = Origin('channel', sender, recip)
+        #dispatch_event("irc.privmsg", sender, recip, message)
+        #dispatch_event("privmsg", origin, message)
+        #if message.startswith(self.prefix):
+        #    if " " in message:
+        #        command, args = message.split(None, 1)
+        #    else:
+        #        command, args = message, []
+        #    dispatch_command(origin, command[len(self.prefix):], args)
+
     def noticed(self, sender, recip, message):
         # the original noticed-function just passes its arguments towards privmsg() - we dont want to do that!
+        pass
         #FIXME the lines below are just copied from privmsg - how appropriate this is I dont know
-        if recip == self.nickname:
-            origin = Origin('query', sender, recip)
-        else:
-            origin = Origin('channel', sender, recip)
-        dispatch_event("irc.notice", sender, recip, message) # remember, that we MUST NEVER respont
-        dispatch_event("notice", origin, message)            # automatically on notices
+        #if recip == self.nickname:
+        #    origin = Origin('query', sender, recip)
+        #else:
+        #    origin = Origin('channel', sender, recip)
+        #dispatch_event("irc.notice", sender, recip, message) # remember, that we MUST NEVER respont
+        #dispatch_event("notice", origin, message)            # automatically on notices
 
     def signedOn(self):
         irc.IRCClient.signedOn(self)
@@ -115,15 +166,35 @@ class IRCClient(irc.IRCClient, object):
 
     def modeChanged(self, user, channel, set, modes, args):
         irc.IRCClient.modeChanged(self, user, channel, set, modes, args)
-
         dispatch_event("irc.modechange", user, channel, set, modes, args)
         if set:
             dispatch_event("irc.setmode", user, channel, modes, args)
         else:
             dispatch_event("irc.delmode", user, channel, modes, args)
 
-    def nickChanged(self, nick):
-        irc.IRCClient.nickChanged(self, nick)
+    def userRenamed(self, oldname, newname):
+        self.nickdb[newname] = self.nickdb.pop(oldname)
+
+    def joined(self, channel):
+        self.chandb[channel] = IRCChannel(channel)
+        self.getInfo(channel)
+
+
+    def topicUpdated(self, user, channel, newTopic):
+        self.chandb[channel].updateTopic(newTopic, user, timestamp=int(time()) )
+
+    ##
+
+    def irc_JOIN(self, prefix, params):
+        irc.IRCClient.irc_JOIN(self, prefix, params)
+        nick = prefix.split('!', 1)[0]
+        if not nick in self.nickdb:
+            self.nickdb[nick] = IRCUser(prefix)
+
+    def irc_QUIT(self, prefix, params):    	    
+        irc.IRCClient.irc_QUIT(self, prefix, params)
+        nick = prefix.split('!', 1)[0]
+        del(self.nickdb[nick])
 
     def lineReceived(self, data): 
         irc.IRCClient.lineReceived(self, data)
@@ -131,53 +202,73 @@ class IRCClient(irc.IRCClient, object):
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
-        if numeric == "001":
-            ":clanserver4u1.de.quakenet.org 001 PyHKAL :Welcome to the QuakeNet IRC Network, PyHKAL3"
-            self.nickname = spacetuple[2]
+#:ChosenOne!~ChosenOne@ChosenOne.users.quakenet.org JOIN #ich-sucke
+
+        if numeric == '333':
+            self.chandb[spacetuple[3]].updateTopicTS(spacetuple[4], spacetuple[5])
+
         if numeric == '353': # name-answer
             ":clanserver4u1.de.quakenet.org 353 ChosenOne = #chan :@alice +bob charlie"
-            dispatch_event("irc.names", spacetuple[4], colontuple[2].split(' ')) # warning: list contains prefixes: ['@ChosenOne','+npx', 'crosbow']
+            for nickname in colontuple[2].split(' '):
+                nick = nickname.replace('+','').replace('@','')
+                if ('@' in nickname) or ('+' in nickname):
+                    mode = nickname[0]
+                else:
+                    mode = ""
+                self.chandb[spacetuple[4]].nicklist.append( {nick: mode } )
         if numeric == "366": # end of /names list
             dispatch_event('irc.endofnames', spacetuple[3] )
     
         if numeric == "354": # triggers on custom /who like the one in getInfo()
-            ":clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX"
-            "                                    ^--me    ^--ID ^-ident ^--host              ^-nick^--flags^--auth ^--realname"
-            resultdict = dict(zip( ('ident', 'host','nick','flags','auth','realname'), spacetuple[4:].split() ))
+            """:clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX
+                                                   ^--me    ^--ID ^-ident ^--host              ^-nick^--flags^--auth ^--realname
+                 in case of missing ID:                ident---v
+                :wineasy2.se.quakenet.org 354 wewetrasdgfdg PyHKAL2 server3.raumopol.de PyHKAL2 H 0 :PyHKAL
+            """
+            resultdict = dict(zip( ('ident', 'host', 'nick', 'flags', 'auth', 'realname'), spacetuple[3:8] + [colontuple[2]] ))
             resultdict['away'] = ('G' in resultdict['flags']) 
             resultdict['auth'] = None if (resultdict['auth'] == 0) else resultdict['auth']
-            ID = spacetuple[3]            
-            print "<<got authnickidentfooline>", repr(resultdict)
-            dispatch_event('irc.whoreply', resultdict) # generic hook, that will give you the answer, without knowing the question :D
-            if ID in whoresults: # how funny would "whoresluts" be,?! :P
-                whoresults[ID].append(resultdict)
+            ID = spacetuple[3] #this might be our numeric ID or the channel matching our rquest
+            #print "<<got authnickidentfooline>", repr(resultdict), ID
+            if ID in self.whoresults: # WHO results. how funny would "whore-sluts" be,?! :P
+                self.whoresults[ID].append(resultdict)
+            else:
+                self.whoresults[ID] = [resultdict]
                 
         if numeric == "315": # end of /who list
             ":clanserver4u1.de.quakenet.org 315 ChosenOne #pyhkal, :End of /WHO list."
             "                                               ^-spacetuple4            "
+            self.whoamount -= 1
+            if self.whoamount == 0: #
+                # We cannot assure, which WHO-reply ends here, so we have to wait for ALL current requests to finish.
+                for ID in self.whoresults:
+                    #print "res:", repr(self.whoresults), "id", repr(ID)
+                    d, target = self.whocalls[ID]
+                    if len(self.whoresults[ID]) > 0:
+                        d.callback(self.whoresults[ID])
+                    else:
+                        d.errback(ValueError())
+            self.whocalls = {}
+            self.whoresults = {}
 
-            target = spacetuple[4][:-1] # disregard comma with [:-1]
-            (callback, ID) = whocalls[target]
-            results = whoresults[ID]
-            callback(results)  #we perform callback(list) here. the list is a list of resultdicts (resultdict-example see aboe)
-            dispatch_event('irc.wholist', results)
-            # we're done here, deleting..
-            del(whocalls[target]) 
-            del(whoresults[ID])
-
-    def getInfo(self, target, callback_result):
+    def getInfo(self, target):
         """ Example of sent command: WHO #pyhkal, %nafuhrt,666"""
-        ID = whocounter.next()
+        ID = self.whocounter.next()
         """
         whocalls: target -> callback,id
         whoresults: id -> (resultline,...)
         """
-        whocalls[target] = (callback_result, ID)
-        whoresults[ID] = []
+        d = defer.Deferred()
         if target[0] == '#':
-            self.send("WHO %s %nafuhr,%s" % (target, ID))
+            self.whocalls[target] = (d, target)
+            self.whoresults[target] = []
+            dispatch_event("irc.send", "WHO %s n%%cnafuhr" % target)
         else: # nickname
-            self.send("WHO %s, %nafuhr,%s" % (target, ID))
+            self.whocalls[ID] = (d, target)
+            self.whoresults[ID] = []
+            dispatch_event("irc.send", "WHO %s, n%%nafuhr,%s" % (target, ID))
+        self.whoamount += 1
+        return d
      
 
 class IRCClientFactory(protocol.ReconnectingClientFactory):
@@ -206,8 +297,7 @@ def establish_connection():
     server = remember("irc server")
     port = remember("irc port", DEFAULT_PORT)
     #+ support SSL
-    service = internet.TCPClient(server, port, factory)
-    twist(service)
+    twist(server, port, factory)
 
 #TODO
 """
@@ -218,7 +308,9 @@ ideas for irc.py
         und dann in der privmsg-funktion: foreach self.callbacks:
             if re-match -> func(msginhalt)
 
-    - test für getInfo
+    - test für getInfo!!1
+
+    - on join
 
     - prefix/serveroptions
         diskussion ob severoptions['PREFIX'] durch ein nonstring ersetzt werden sollte..
