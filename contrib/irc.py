@@ -44,15 +44,19 @@ __settings__ = dict(
 )
 
 class IRCUser(Avatar):
-    def __init__(self, hostmask, auth=None, realname=None):
-        self.hostmask = hostmask
-        self.nick, identandhost = self.hostmask.split('!', 1)
-        self.ident = identandhost.split('@',1)[0]
-        self.host = identandhost.split('@',1)[1]
-        self.ident = self.hostmask.split('!', 1)[0]
-        self.auth = auth
-        self.realname = realname
+    def __init__(self, **kwargs):
+        # Fall 2: Komplettes dict von nick, ident, host, realname, auth
+        for k,v in kwargs.iteritems():
+            setattr(self, k, v)
+        assert self.nick != None
 
+    @staticmethod
+    def fromhostmask(hostmask): # Fall 1: IRCUser(hostmask="nick!ident@host") und er hat schonmal 3 Werte
+        data = {}
+        data["nick"], identandhost = hostmask.split('!', 1)
+        data["ident"],data["host"] = identandhost.split('@',1)
+        return IRCUser(**data)
+        
     def message(self, text):
         dispatch_event("irc.sendmessage", self.nick, text)
 
@@ -130,6 +134,14 @@ class IRCClient(irc.IRCClient, object):
         self.nickdb = {}
         self.chandb = {}
 
+    def UpdateNickDB(self, resultlist):
+        for user in resultlist:
+            self.nickdb[user['nick']] = IRCUser(**user)
+
+        #print "UpdateToNickkDB:", resultlist
+        #print "NickDB:", self.nickdb
+    
+
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
         @hook("irc.send")
@@ -146,10 +158,11 @@ class IRCClient(irc.IRCClient, object):
 
     def privmsg(self, sender, recip, message): # used when RECEIVING a message
         irc.IRCClient.privmsg(self, sender, recip, message)
+        nick = sender.split("!",1)[0]
         if recip == self.nickname:
-            dispatch_event("privmsg", IRCMessage(self.nickdb[sender], IRCQuery(self.nickdb[sender]), message))
+            dispatch_event("privmsg", IRCMessage(self.nickdb[nick], IRCQuery(self.nickdb[nick]), message))
         else:
-            dispatch_event("privmsg", IRCMessage(self.nickdb[sender], self.chandb[recip], message))
+            dispatch_event("privmsg", IRCMessage(self.nickdb[nick], self.chandb[recip], message))
 
         #dispatch_event("privmsg", origin, message)
         #if message.startswith(self.prefix):
@@ -189,19 +202,18 @@ class IRCClient(irc.IRCClient, object):
 
     def joined(self, channel):
         self.chandb[channel] = IRCChannel(channel)
-        self.getInfo(channel)
+        d = self.getInfo(channel)
+        d.addCallback(self.UpdateNickDB)
 
 
     def topicUpdated(self, user, channel, newTopic):
         self.chandb[channel].updateTopic(newTopic, user, timestamp=int(time()) )
 
-    ##
-
     def irc_JOIN(self, prefix, params):
         irc.IRCClient.irc_JOIN(self, prefix, params)
         nick = prefix.split('!', 1)[0]
         if not nick in self.nickdb:
-            self.nickdb[nick] = IRCUser(prefix)
+            self.nickdb[nick] = IRCUser.fromhostmask(prefix)
 
     def irc_QUIT(self, prefix, params):    	    
         irc.IRCClient.irc_QUIT(self, prefix, params)
@@ -214,7 +226,6 @@ class IRCClient(irc.IRCClient, object):
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
-#:ChosenOne!~ChosenOne@ChosenOne.users.quakenet.org JOIN #ich-sucke
 
         if numeric == '333':
             self.chandb[spacetuple[3]].updateTopicTS(spacetuple[4], spacetuple[5])
@@ -232,20 +243,24 @@ class IRCClient(irc.IRCClient, object):
             dispatch_event('irc.endofnames', spacetuple[3] )
     
         if numeric == "354": # triggers on custom /who like the one in getInfo()
-            """:clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX
-                                                   ^--me    ^--ID ^-ident ^--host              ^-nick^--flags^--auth ^--realname
+            """ :clanserver4u2.de.quakenet.org 354 pyhkal_ #pyhkal ~ChosenOne ChosenOne.users.quakenet.org ChosenOne H@+x ChosenOne :lost in thoughts
+            :clanserver4u2.de.quakenet.org 354 pyhkal_ #pyhkal TheQBot CServe.quakenet.org Q H*@d Q :The Q Bot
+            :clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX
+                                                 ^--me    ^--ID ^-ident ^--host              ^-nick^--flags^--auth ^--realname
                  in case of missing ID:                ident---v
                 :wineasy2.se.quakenet.org 354 wewetrasdgfdg PyHKAL2 server3.raumopol.de PyHKAL2 H 0 :PyHKAL
+
             """
-            resultdict = dict(zip( ('ident', 'host', 'nick', 'flags', 'auth', 'realname'), spacetuple[3:8] + [colontuple[2]] ))
-            resultdict['away'] = ('G' in resultdict['flags']) 
-            resultdict['auth'] = None if (resultdict['auth'] == 0) else resultdict['auth']
-            ID = spacetuple[3] #this might be our numeric ID or the channel matching our rquest
-            #print "<<got authnickidentfooline>", repr(resultdict), ID
-            if ID in self.whoresults: # WHO results. how funny would "whore-sluts" be,?! :P
-                self.whoresults[ID].append(resultdict)
-            else:
-                self.whoresults[ID] = [resultdict]
+            if spacetuple[3].isdigit() or spacetuple[3][0] == '#':
+                resultdict = dict(zip( ('ident', 'host', 'nick', 'flags', 'auth', 'realname'), spacetuple[4:9] + [colontuple[2],] ))
+                resultdict['away'] = ('G' in resultdict['flags']) 
+                resultdict['auth'] = None if (resultdict['auth'] == 0) else resultdict['auth']
+                ID = spacetuple[3] #this might be our numeric ID or the channel matching our rquest
+                #print "<<got authnickidentfooline>", repr(resultdict), ID
+                if ID in self.whoresults: # WHO results. how funny would "whore-sluts" be,?! :P
+                    self.whoresults[ID].append(resultdict)
+                else:
+                    self.whoresults[ID] = [resultdict]
                 
         if numeric == "315": # end of /who list
             ":clanserver4u1.de.quakenet.org 315 ChosenOne #pyhkal, :End of /WHO list."
@@ -325,6 +340,8 @@ ideas for irc.py
     - on join (hab ich laub ich)
     - on part/kick überprüfen, ob wir denjenigen noch "sehen".
     -> insbesondere nicklist-updates in part,quit,join,kick,nick
+
+    wichtig: das füllen von chandb prüfen :)
 
     - prefix/serveroptions
         diskussion ob severoptions['PREFIX'] durch ein nonstring ersetzt werden sollte..

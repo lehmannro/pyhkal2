@@ -5,11 +5,14 @@ from inspect import getargspec, currentframe
 import re
 from pyhkal.engine import Pyhkal
 from pyhkal.shrink import Avatar
+from pyhkal.event import Event, Location
 
 api = {}
 def apply(service):
     applied = dict((name, partial(func, service)) for name, func in api.iteritems())
     applied['Avatar'] = Avatar
+    applied['Location'] = Location
+    applied['Event'] = Event
     applied['davenport'] = service.davenport
     return applied
 
@@ -27,39 +30,20 @@ def expose(item_or_name, item=None):
         api[item_or_name.__name__] = item_or_name
 
 @expose
-def hook(service, event, *args, **kwargs):
-    args = map(re.compile, args)
-    for k in kwargs.iterkeys():
-        kwargs[k] = re.compile(kwargs[k])
+def hook(service, event, expr=None):
+    if expr:
+        comp_re = re.compile(expr)
 
-    # @hook('irc.sendmsg', recip=re1, msg=re2) ODER @hook('irc.sendmsg', re3) <- matcht auf sender
-    # def handlemsg(sender,recip,msg) <- wird nur aufgerufen, wenn regex im Hook auch erfüllt ist!
     def deco(func):
-        funcargs = getargspec(func)[0] # the new FunCarGS - order now!
-        # dispatch_event('irc.privmsg', sender, recip, msg) --> ['sender','recip','msg']
-        def matching( *margs, **mkwargs):
-            params = dict(zip(funcargs, margs))
-            params.update(mkwargs)
-            value = dict(params)
-
-            for i,arg in enumerate(args):
-                match = arg.search(value[funcargs[i]])
-                if not match:
-                    return
-                else:
-                    params[funcargs[i]] = match
-
-            for k,v in kwargs.iteritems():
-                match = v.search(value[k])
-                if not match:
-                    return
-                else:
-                    params[k] = match
-
-            func(**params)
-
-        service.add_listener(event, matching)
-        return matching
+        if expr:
+            def new_func(event):
+                if comp_re.match(event.content):
+                    return func(event)
+        else:
+            new_func = func
+        
+        service.add_listener(event, new_func)
+        return new_func
     return deco
 
 
