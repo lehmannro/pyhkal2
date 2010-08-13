@@ -210,6 +210,8 @@ class IRCClient(irc.IRCClient, object):
         self.chandb[channel].updateTopic(newTopic, user, timestamp=int(time()) )
 
     def irc_JOIN(self, prefix, params):
+        print "ACHTUNG HIER", params
+        #params = params[:-1] + params[-1].replace(':','')
         irc.IRCClient.irc_JOIN(self, prefix, params)
         nick = prefix.split('!', 1)[0]
         if not nick in self.nickdb:
@@ -226,6 +228,10 @@ class IRCClient(irc.IRCClient, object):
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
+        if numeric == "001":
+            ":clanserver4u1.de.quakenet.org 001 PyHKAL :Welcome to the QuakeNet IRC Network, PyHKAL3"
+            self.nickname = spacetuple[2]
+            #XXX do NOT remove. when connecting to a bouncer(e.g. sbnc) we do not really now what our nick is, before this event
 
         if numeric == '333':
             self.chandb[spacetuple[3]].updateTopicTS(spacetuple[4], spacetuple[5])
@@ -238,7 +244,8 @@ class IRCClient(irc.IRCClient, object):
                     mode = nickname[0]
                 else:
                     mode = ""
-                self.chandb[spacetuple[4]].nicklist.append( {nick: mode } )
+                    self.chandb[spacetuple[4]].nicklist.append( {nick: mode } )
+            
         if numeric == "366": # end of /names list
             dispatch_event('irc.endofnames', spacetuple[3] )
     
