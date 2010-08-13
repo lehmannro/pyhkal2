@@ -4,7 +4,6 @@
 import collections
 import weakref
 from _weakrefset import WeakSet
-from pyhkal import davenport, shopping
 
 try:
     import json
@@ -13,6 +12,9 @@ except ImportError:
 else:
     import sys
     sys.modules['simplejson'] = json
+
+from pyhkal import davenport, shopping
+
 
 listeners = collections.defaultdict(WeakSet)
 #+ support subcommands
