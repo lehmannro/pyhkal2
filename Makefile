@@ -27,5 +27,5 @@ install: $(VIRTUALENV) $(SOURCES)
 
 clean:
 	rm -rf "$(VIRTUALENV)"
-	rm -rf "build/"
-	rm -f pip-log.txt
+	rm -rf build/ dist/
+	rm -f pip-log.txt MANIFEST twistd.pid
