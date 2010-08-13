@@ -24,7 +24,8 @@ class Davenport(paisley.CouchDB):
         payload = "function(doc){ %s }" % map_fun
         docname = '_design/%s' % module
         def add_view(doc):
-            self.saveDoc(self.addViews(doc, {by: payload}))
-        def create_view(exc):
-            self.saveDoc(self.addViews({}, {by: payload}), docId=docname)
-        self.openDoc(docname).addCallback(add_view).addErrback(create_view)
+            if isinstance(doc, Exception):
+                doc = {}
+            self.addViews(doc, {by: payload})
+            self.saveDoc(doc)
+        self.openDoc(docname).addBoth(add_view)
