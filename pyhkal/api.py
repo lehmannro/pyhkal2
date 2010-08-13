@@ -3,7 +3,6 @@
 from functools import partial
 from inspect import getargspec
 import re
-import pyhkal.davenport
 from pyhkal.engine import Pyhkal
 
 api = {}
