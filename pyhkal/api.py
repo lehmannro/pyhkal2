@@ -2,14 +2,15 @@
 
 from functools import partial
 from inspect import getargspec
+import types
 import re
 from pyhkal.engine import Pyhkal
 from pyhkal.shrink import Avatar
 
 api = {}
 def apply(service):
-    return dict((name,
-        partial(func, service) if isinstance(func, type(lambda:0)) else func)
+    return dict((name, partial(func, service)
+        if isinstance(func, (types.FunctionType, types.MethodType)) else func)
         for name, func in api.iteritems())
 
 def expose(item_or_name, item=None):
