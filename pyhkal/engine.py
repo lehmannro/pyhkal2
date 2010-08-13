@@ -37,10 +37,10 @@ class Pyhkal(service.Service):
         reactor.connectTCP(host, port, factory)
 
     def add_listener(self, name, listener):
-        self.listeners[name].add(listener)
+        self.listeners[name.lower()].add(listener)
 
     def dispatch_event(self, name, *args):
-        for dispatcher in self.listeners[name]:
+        for dispatcher in self.listeners[name.lower()]:
             dispatcher(*args)
 
     def add_command(self, command, listener):
