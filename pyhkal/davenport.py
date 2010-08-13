@@ -27,5 +27,5 @@ class Davenport(paisley.CouchDB):
             if isinstance(doc, Exception):
                 doc = {}
             self.addViews(doc, {by: payload})
-            self.saveDoc(doc)
+            self.saveDoc(doc, docId=docname)
         self.openDoc(docname).addBoth(add_view)
