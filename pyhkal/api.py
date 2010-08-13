@@ -4,6 +4,7 @@ from functools import partial
 from inspect import getargspec
 import re
 from pyhkal.engine import Pyhkal
+from pyhkal.shrink import Avatar
 
 api = {}
 def apply(service):
@@ -97,3 +98,5 @@ def remember(service, breadcrumbs, default=_none):
 
 expose(Pyhkal.dispatch_command)
 expose(Pyhkal.dispatch_event)
+
+expose(lambda service:Avatar)
