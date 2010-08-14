@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from functools import partial
+from functools import partial, wraps
 from inspect import getargspec, currentframe
 import re
 from pyhkal import shrink
@@ -36,6 +36,7 @@ def hook(service, event, expr=None):
 
     def deco(func):
         if expr:
+            @wraps(func)
             def new_func(event):
                 if comp_re.search(event.content):
                     return func(event)
