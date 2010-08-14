@@ -64,6 +64,7 @@ class IRCChannel(Location):
     def __init__(self, name):
         self.name = name
         self.nicklist = []
+        self.modes  = {}
 
     def updateTopic(self, topic, nick, timestamp=None):
         self.topic = topic
@@ -86,6 +87,7 @@ class IRCChannel(Location):
         :servercentral.il.us.quakenet.org 353 wersfda @ #pyhkal :wersfda PyHKAL2 jannotb @ChosenOne catbot fishbot @npx @Q
         :servercentral.il.us.quakenet.org 366 wersfda #pyhkal :End of /NAMES list.
         """
+
     def message(self, msg):
         dispatch_event("irc.sendmessage", self.name, msg)
 
@@ -191,6 +193,27 @@ class IRCClient(irc.IRCClient, object):
 
     def modeChanged(self, user, channel, set, modes, args):
         irc.IRCClient.modeChanged(self, user, channel, set, modes, args)
+
+        if channel in self.chandb:
+            nick = user.split('!', 1)[1]
+            def want_param(mode):
+                chanmodes = self.supported.getFeature('CHANMODES')
+                if (mode in chanmodes['param']) or (mode in chanmodes['setParam']):
+                    return True
+                else:
+                    return False
+            if set:
+                params = list(args) 
+                for m in modes:
+                    value = params.pop(0) if (want_param(m)) else None
+                    self.chandb[channel].modes[m] = value
+            else:
+                for m in modes:
+                    del(self.chandb[channel].modes[m])
+
+        #XXX will also trigge for user-mode
+        #print "MODE CHANGE", user, channel, set, modes, args
+
         dispatch_event("irc.modechange", user, channel, set, modes, args)
         if set:
             dispatch_event("irc.setmode", user, channel, modes, args)
@@ -204,6 +227,7 @@ class IRCClient(irc.IRCClient, object):
         self.chandb[channel] = IRCChannel(channel)
         d = self.getInfo(channel)
         d.addCallback(self.UpdateNickDB)
+        dispatch_event("irc.send", "MODE %s" % channel)
 
     def topicUpdated(self, user, channel, newTopic):
         self.chandb[channel].updateTopic(newTopic, user, timestamp=int(time()) )
@@ -229,19 +253,40 @@ class IRCClient(irc.IRCClient, object):
         if numeric == "001":
             ":clanserver4u1.de.quakenet.org 001 PyHKAL :Welcome to the QuakeNet IRC Network, PyHKAL3"
             self.nickname = spacetuple[2]
-            #XXX do NOT remove. when connecting to a bouncer(e.g. sbnc) we do not really now what our nick is, before this event
+            #XXX do NOT remove. when connecting to a bouncer(e.g. sbnc) we do not really know what our nick is, before this event occurs
+
+        if numeric == '324':
+            """irc.quakenet.org 324 woobie #channel +tncCNul 30 """
+            channel = spacetuple[3]
+            modes = spacetuple[4] if (spacetuple[4][0] != '+') else spacetuple[4][1:]
+            params = spacetuple[5].split()
+            #print "NUUUUU", self.supported.getFeature('CHANMODES')
+            #NUUUUU {'noParam': 'imnpstrDducCNMT', 'setParam': 'l', 'addressModes': 'b', 'param': 'k'}
+            def want_param(mode):
+                chanmodes = self.supported.getFeature('CHANMODES')
+                if (mode in chanmodes['param']) or (mode in chanmodes['setParam']):
+                    return True
+                else:
+                    return False
+
+            for m in modes:
+                value = params.pop(0) if (want_param(m)) else None
+                self.chandb[channel].modes[m] = value
 
         if numeric == '333':
             self.chandb[spacetuple[3]].updateTopicTS(spacetuple[4], spacetuple[5])
 
         if numeric == '353': # name-answer
             ":clanserver4u1.de.quakenet.org 353 ChosenOne = #chan :@alice +bob charlie"
-            for nickname in colontuple[2].split(' '):
-                nick = nickname.replace('+','').replace('@','')
-                if ('@' in nickname) or ('+' in nickname):
-                    mode = nickname[0]
-                else:
-                    mode = ""
+            prefixes = self.supported.getFeature("PREFIX").iterkeys()
+            for nickname in colontuple[2].split(' '): # every nickname...
+                for p in prefixes: # remove prefix if set
+                    if (p == nickname[0]):
+                        mode = nickname[0]
+                        nick = nickname[1:]
+                    else:
+                        mode = ""
+                        nick = nickname
                     self.chandb[spacetuple[4]].nicklist.append( {nick: mode } )
             
         if numeric == "366": # end of /names list
