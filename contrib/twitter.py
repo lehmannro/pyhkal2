@@ -26,7 +26,7 @@ class Tweet(Event):
         Event.__init__(self, target, source, content)
         self.id = id
     def reply(self, msg):
-        return self.target.reply(msg)
+        return self.target.reply("@%s %s" % (source.name, msg))
 
 
 class Reply(Location):
@@ -57,11 +57,8 @@ def twit():
     return twitter.Twitter(consumer=con, token=tok)
 
 def tweet(msg, params=None):
-    # FIXME UNICODE
-    print msg
-    msg = u'' + msg
     params = params or {}
-    return twit().update(msg, params=params)
+    return twit().update(msg,  params=params)
 
 def tweet_direct(msg, user, params=None):
     params = params or {}
@@ -71,21 +68,38 @@ def tweet_direct(msg, user, params=None):
 REFRESHDELAY = 60
 
 def reply_delegate(msg):
+    """ 
+    ATOM!!!
+    function to handle replies to pyhkals tweet
+    """
     id = extract_id(msg.id)
     source = User(msg.author.name)
     target = Reply(id)
-    e = Tweet(target, source, msg.title, id)
-    dispatch_event('twitter.reply', e)
+    e = Tweet(target, source, msg.title.split(' ',1)[1], id)
+    # create another event without @PyHKAL in msg.title
+    e2 = Tweet(target, source, msg.title.split(' ',2)[2], id)
+    dispatch_event('twitter.reply', e2)
     dispatch_event('twitter.privmsg', e)
     dispatch_event('privmsg', e)
 
-    if 'trigger' in msg.title:
-        target.reply("YAY")
+    def command_check(event):
+        """ Scan msg or event.content for
+        commands and dispatch if found
+        """
+        if event.content.strip():
+            command = event.content.split(' ')[1]
+            dispatch_command(command, event)
+    
+    command_check(e2)
+
+
 
 def refresh_task():
     return twit().replies(reply_delegate)
 
 refresher = LoopingCall(refresh_task)
+
+
 
 
 # Initialization
