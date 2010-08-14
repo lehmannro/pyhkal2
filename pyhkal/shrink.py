@@ -58,9 +58,9 @@ class Identity(object):
     """
 
     INSTANCES = {}
-    def __new__(self, docid):
+    def __new__(cls, docid):
         if docid not in self.INSTANCES:
-            self.INSTANCES[docid] = type.__new__(self, docid)
+            self.INSTANCES[docid] = object.__new__(cls, docid)
         return self.INSTANCES[docid]
 
     def __init__(self, docid):
