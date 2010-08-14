@@ -3,16 +3,16 @@
 from functools import partial
 from inspect import getargspec, currentframe
 import re
+from pyhkal import shrink
 from pyhkal.engine import Pyhkal
-from pyhkal.shrink import Avatar
-from pyhkal.event import Event, Location
 
 api = {}
 def apply(service):
     applied = dict((name, partial(func, service)) for name, func in api.iteritems())
-    applied['Avatar'] = Avatar
-    applied['Location'] = Location
-    applied['Event'] = Event
+    #XXX raw expose decorator
+    for o in shrink.Avatar, shrink.Event, shrink.Location:
+        applied[o.__name__] = o
+    applied['Identity'] = shrink.IdentityFactory(service)
     applied['davenport'] = service.davenport
     return applied
 
@@ -63,6 +63,15 @@ expose(Pyhkal.twist)
 def chaos(service, name, script):
     mod = currentframe().f_back.f_globals['__mod__']
     service.davenport.order(mod, name, script)
+    def call(cb=None, key=None, **kwargs):
+        if key is not None:
+            kwargs['startkey'] = key
+            kwargs['endkey'] = key + u'\ufff0'
+        d = service.davenport.openView(mod, name, **kwargs)
+        if cb is not None:
+            d.addCallback(cb)
+        return d
+    return call
 
 @expose
 def send(service, message, dest=None):

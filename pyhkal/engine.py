@@ -37,10 +37,10 @@ class Pyhkal(service.Service):
         reactor.connectTCP(host, port, factory)
 
     def add_listener(self, name, listener):
-        self.listeners[name].add(listener)
+        self.listeners[name.lower()].add(listener)
 
     def dispatch_event(self, name, *args):
-        for dispatcher in self.listeners[name]:
+        for dispatcher in self.listeners[name.lower()]:
             dispatcher(*args)
 
     def add_command(self, command, listener):
@@ -49,8 +49,8 @@ class Pyhkal(service.Service):
             raise SystemError
         self.commands[command] = listener
 
-    def dispatch_command(self, command, *args):
+    def dispatch_command(self, command, event):
         #+ subcommand dispatch
         #+ check for number of arguments
         if command in self.commands:
-            self.commands[command](event, *args)
+            self.commands[command](event)
