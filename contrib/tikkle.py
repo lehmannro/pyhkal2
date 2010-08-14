@@ -20,36 +20,36 @@ tikkleView = chaos("tikkleTIKKLE",
         }
     """
 )
+tikkleUserView = chaos("tikkleUserView",
+    """
+        if (doc.doctype == "user") {
+            emit("User", doc.name);
+        }
+    """
+)
 
+## Digest Control
 @hook('privmsg')
 @defer.inlineCallbacks
 def startTheTikkleFun(event):
-    if (isinstance(event.target,irc.IRCChannel)):
-        # 1) Phrase basteln!
-        msg = event.content
+    if ((isinstance(event.target,irc.IRCChannel)) and (hasIdentity(event))):
+        d = davenport.openDoc(str(event.source.identity.docid))
+        doc = yield d
 
-        # 2) Ist der User schon eingeloggt? bzw identity gelinkt?
-        ident = event.source.identity if (hasattr(event.source,"identity")) else None
+        loginRE = re.compile(doc["tikkle"]["login"])
+        logoutRE = re.compile(doc["tikkle"]["logout"])
+        afkRE = re.compile(doc["tikkle"]["afk"])
 
-        ######## User ist eingeloggt
-        if (ident != None):
-            d = davenport.openDoc(str(event.source.identity.docid))
-            doc = yield d
-
-            loginRE = re.compile(doc["tikkle"]["login"])
-            logoutRE = re.compile(doc["tikkle"]["logout"])
-            afkRE = re.compile(doc["tikkle"]["afk"])
-
-            if (loginRE.match(event.content) != None):
-                event.reply("User recognized - Digests!")
-                doStuff(event)
-            elif (logoutRE.match(event.content) != None):
-                event.source.identity.avatars.remove(event.source)
-                event.source.identity = None
-                event.reply("User unlinked!")
-            elif (afkRE.match(event.content) != None):
-                # set last activity
-                event.reply("Set Last activity!")
+        if (loginRE.match(event.content) != None):
+            event.source.message("User recognized - Digests!")
+            doStuff(event)
+        elif (logoutRE.match(event.content) != None):
+            event.source.identity.avatars.remove(event.source)
+            event.source.identity = None
+            event.reply("User unlinked!")
+        elif (afkRE.match(event.content) != None):
+            # set last activity
+            event.reply("Set Last activity!")
 
 def doStuff(event):
     fetchTikkles(event)
@@ -61,8 +61,38 @@ def fetchTikkles(event):
         if (entry[u'key'] == event.source.identity.docid):
             senderDoc = davenport.openDoc(str(entry[u'value'][0]))
             senderDoc = yield senderDoc
-            event.reply(str(senderDoc[u'name']+": "+entry[u'value'][1]))
+            event.source.message(str(senderDoc[u'name']+": "+entry[u'value'][1]))
 
+## Send Messages
+@hook('privmsg',expr='^tikkle tikkle .*')
+def sendMsg(event):
+    print "------------------------- AGAGAGAGAGG"
+    # msg = [tikkle, tikkle, <identity name>, <text>]
+    msg = event.content.split(' ')
+    event.reply(msg)
+    if ((msg[1] == tikkle) and (hasIdentity(event))):
+        event.reply("woo")
+        sent = False
+        tikkle = {}
+        users = yield tikkleUserView()
+        for user in users:
+            if (str(user[u'value']) == msg[2]):
+                tikkle["from"] = event.source.identity.docid
+                tikkle["to"] = user[u'id']
+                tikkle["msg"] = " ".join(msg[3:])
+                davenport.saveDoc()
+                event.reply(user)
+                sent = True
+                break
+        if sent:
+            event.reply("-done-")
+        else:
+            event.reply("Error: Identity DOES NOT COMPUTE!!1")
+## AIDS
+def hasIdentity(event):
+    return not ((hasattr(event.source,"identity")) and (event.source.identity == None))
+
+## Hardcoded Identity
 @hook('privmsg',expr='npx')
 def MuupDuup(event):
     if ((event.source.nick == 'npx') and ((not hasattr(event.source,"identity")) or (event.source.identity == None))):
