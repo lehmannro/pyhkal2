@@ -94,6 +94,8 @@ class IRCMessage(Event):
         self.content = text
         self.source = avatar
         self.target = location
+    def reply(self, msg):
+        self.target.message(msg)
 
 class IRCQuery(Location):
     def __init__(self, user):
@@ -103,14 +105,10 @@ class IRCQuery(Location):
         dispatch_event("irc.sendmessage", self.user.nick, msg)
 
 @hook("irc.sendmessage")
-def send_message(message, dest):
-    for d in dest:
-        if d.type == "query":
-            # FIXME there should be a function to get the username from an address
-            # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
-            dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.user.split("!")[0], message))
-        elif d.type == "channel":
-            dispatch_event("irc.send", "PRIVMSG %s :%s" % (d.public, message))
+def send_message(dst, msg):
+    # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
+    dispatch_event("irc.send", "PRIVMSG %s :%s" % (dst, msg))
+
 
 class IRCClient(irc.IRCClient, object):
     def __init__(self):
@@ -161,8 +159,10 @@ class IRCClient(irc.IRCClient, object):
         nick = sender.split("!",1)[0]
         if recip == self.nickname:
             dispatch_event("privmsg", IRCMessage(self.nickdb[nick], IRCQuery(self.nickdb[nick]), message))
+            dispatch_event("irc.privmsg", IRCMessage(self.nickdb[nick], IRCQuery(self.nickdb[nick]), message))
         else:
             dispatch_event("privmsg", IRCMessage(self.nickdb[nick], self.chandb[recip], message))
+            dispatch_event("irc.privmsg", IRCMessage(self.nickdb[nick], self.chandb[recip], message))
 
         #dispatch_event("privmsg", origin, message)
         #if message.startswith(self.prefix):
@@ -205,12 +205,10 @@ class IRCClient(irc.IRCClient, object):
         d = self.getInfo(channel)
         d.addCallback(self.UpdateNickDB)
 
-
     def topicUpdated(self, user, channel, newTopic):
         self.chandb[channel].updateTopic(newTopic, user, timestamp=int(time()) )
 
     def irc_JOIN(self, prefix, params):
-        print "ACHTUNG HIER", params
         #params = params[:-1] + params[-1].replace(':','')
         irc.IRCClient.irc_JOIN(self, prefix, params)
         nick = prefix.split('!', 1)[0]
@@ -349,6 +347,8 @@ ideas for irc.py
     -> insbesondere nicklist-updates in part,quit,join,kick,nick
 
     wichtig: das füllen von chandb prüfen :)
+
+    # FIXME there should be a function to get the username from an address
 
     - prefix/serveroptions
         diskussion ob severoptions['PREFIX'] durch ein nonstring ersetzt werden sollte..
