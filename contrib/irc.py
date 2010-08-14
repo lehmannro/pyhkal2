@@ -160,19 +160,17 @@ class IRCClient(irc.IRCClient, object):
         irc.IRCClient.privmsg(self, sender, recip, message)
         nick = sender.split("!",1)[0]
         if recip == self.nickname:
-            dispatch_event("privmsg", IRCMessage(self.nickdb[nick], IRCQuery(self.nickdb[nick]), message))
-            dispatch_event("irc.privmsg", IRCMessage(self.nickdb[nick], IRCQuery(self.nickdb[nick]), message))
+            target = IRCQuery(self.nickdb[nick])
         else:
-            dispatch_event("privmsg", IRCMessage(self.nickdb[nick], self.chandb[recip], message))
-            dispatch_event("irc.privmsg", IRCMessage(self.nickdb[nick], self.chandb[recip], message))
+            target = self.chandb[recip]
+        event = IRCMessage(self.nickdb[nick], target, message)
+        dispatch_event("privmsg", event)
+        dispatch_event("irc.privmsg", event)
 
-        #dispatch_event("privmsg", origin, message)
-        #if message.startswith(self.prefix):
-        #    if " " in message:
-        #        command, args = message.split(None, 1)
-        #    else:
-        #        command, args = message, []
-        #    dispatch_command(origin, command[len(self.prefix):], args)
+        if message.startswith(self.prefix):
+            command_event = IRCMessage(self.nickdb[nick], target, message[len(self.prefix)+1:])
+            # dispatch_command(origin, command[len(self.prefix):], args)
+            dispatch_command(message[len(self.prefix):].split(" ")[0], command_event)
 
     def noticed(self, sender, recip, message):
         # the original noticed-function just passes its arguments towards privmsg() - we dont want to do that!
