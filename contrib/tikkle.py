@@ -7,80 +7,62 @@
     - Abos requesten von DigestMod                [ ]
     - Ein und ausloggen via user.py               [x]
 
+
+    user.py uebernimmt identitiy handling!!11!!1EINSELF
 """
-
+from twisted.internet import defer
+import re
 __version__ = "0.1a"
-__requires__ = ['user','channel']
+__requires__ = ["irc"]
 
 
-viewUSER = chaos("PenisViewUSER",
+chaos("PenisViewUSER",
     """
-        if (doc.type == "user") {
-            emit("penis", doc)
+        if (doc.tikkle) {
+            emit(null, doc.tikkle)
         }
     """
 )
 
-@hook('PRIVMSG')
-def startTheTikkleFun(origin, args):
-    if (origin.type == 'channel'):
-
+@hook('privmsg')
+@defer.inlineCallbacks
+def startTheTikkleFun(event):
+    event.reply("InFun")
+    if (isinstance(event.target,irc.IRCChannel)):
+        event.reply("InIf")
         # 1) Phrase basteln!
-        msg = ' '.join(args[1:])
-        
-        # 2) Ist der User schon eingeloggt?
-        acc = user.getAccountByOrigin(origin)
+        msg = event.content
 
-        if (acc != None):                           ######## User ist eingeloggt
-            """
-                Digests?
-                Afk setzen?
-                Ausloggen?
-            """
-            ## Logout
-            accounts = getAccountsThatMatchPhrase('logout', msg)
-            for acc in accounts:
-                if origin.user.lower() == acc["loggedinas"].lower():
-                    user.logout(acc)
-                    return None
-            
-            ## AFK setzen
-            accounts = getAccountsThatMatchPhrase('afk', msg)
-            for acc in accounts:
-                if origin.user.lower() == acc["loggedinas"].lower():
-                    user.setLastActivity(acc)
-                    return None
-            
-            ## Digest
-            accounts = getAccountsThatMatchPhrase('login', msg)
-            for acc in accounts:
-                if origin.user.lower() == acc["loggedinas"].lower():
-                    doStuff(acc)
-                    return None
+        # 2) Ist der User schon eingeloggt? bzw identity gelinkt?
+        ident = event.source.identity if (hasattr(event.source,"identity")) else None
 
-        else:                                       ## User ist nicht eingeloggt
-            accounts = getAccountsThatMatchPhrase('login', msg)
-            for acc in accounts:
-                def takeItToTheNextLevel(qauth):
-                    if (qauth != ''):                            # User geauthed
-                        if (qauth.lower() == acc["qauth"].lower()):
-                            user.identify(origin)
-                            return None
-                    else:                                  # User nicht geauthed
-                        irc.notice(origin.user, "PENIS PENIS PENIS PENIS PENIS PENIS! (... and a baseball bat...)")
-                        return None
-                channel.get_auth_nick(origin.user, takeItToTheNextLevel(qauth))
+        ######## User ist eingeloggt
+        if (ident != None):
+            event.reply("InIf2")
+            d = davenport.openDoc(event.source.identity.docid)
+            doc = yield d
 
-def getAccountsThatMatchPhrase(typ, phrase):
-        accounts = []
-        if (typ in ['login','afk','logout']):
-            docs = viewUSERS()
-            for d in docs:
-                regexobject = re.compile(d["penis"]["tikkle"][typ])
-                if regexobject.match(phrase) != None:
-                    accounts.append(d)
-        return accounts
+            loginRE = re.compile(doc["tikkle"]["login"])
+            logoutRE = re.compile(doc["tikkle"]["logout"])
+            afkRE = re.compile(doc["tikkle"]["afk"])
+            event.reply("PreMatch")
+            if (loginRE.match(event.content) != None):
+                event.reply("doStuff() - ehehehe, Freddy B")
+                doStuff()
+            elif (logoutRE.match(event.content) != None):
+                event.source.identity.avatars.remove(event.source)
+                event.source.identity = None
+                event.reply("Logged out?!")
+            elif (afkRE.match(event.content) != None):
+                # set last activity
+                event.reply("Set Last activity!")
 
-@hook("user.loggedin")
-def doStuff(acc):
-    irc.notice(origin.user, "hi %s! DIGESTS UND SO!" % acc)
+def doStuff():
+    print "DOOOSTUUUUUUFFFFFFF!!!111222"
+
+@hook('privmsg',expr='npx')
+def MuupDuup(event):
+    if (event.source.nick == 'npx'):
+        event.source.identity = Identity("107097e10a2cacb7caa6d9d04d7ed8c7")
+        event.source.identity.link(event.source)
+        print "Locked n' Linked!"
