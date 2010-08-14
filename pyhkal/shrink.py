@@ -59,7 +59,7 @@ class Identity(object):
 
     INSTANCES = {}
     def __new__(self, docid):
-        if docid not in IDS:
+        if docid not in self.INSTANCES:
             self.INSTANCES[docid] = type.__new__(self, docid)
         return self.INSTANCES[docid]
 
