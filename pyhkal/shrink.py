@@ -59,9 +59,9 @@ class Identity(object):
 
     INSTANCES = {}
     def __new__(cls, docid):
-        if docid not in self.INSTANCES:
-            self.INSTANCES[docid] = object.__new__(cls, docid)
-        return self.INSTANCES[docid]
+        if docid not in cls.INSTANCES:
+            cls.INSTANCES[docid] = object.__new__(cls, docid)
+        return cls.INSTANCES[docid]
 
     def __init__(self, docid):
         self.docid = docid
