@@ -29,11 +29,3 @@ def togglemute(ircmsg):
             dispatch_event("irc.sendmessage", chan.name, "cool story, bro")
             dispatch_event('irc.send', "MODE %s +m" % chan.name)
 
-#@register
-#def stfu(origin, args):
-#    dispatch_event('irc.send', "MODE %s +m" % origin.public)
-
-@hook("shutdown")
-def save():
-    for chan in bot.get(NAME, "channels"):
-        bot.setmode(chan, "-m")
