@@ -4,6 +4,7 @@
 
     - Ein-/Auslog-Phrase                          [x]
     - AFK-Phrase                                  [x]
+    - Fetch tikkles                               [x]
 
 """
 from twisted.internet import defer
@@ -58,11 +59,17 @@ def fetchTikkles(event):
     entries = yield tikkleView()
     for entry in entries[u'rows']:
         if (entry[u'key'] == event.source.identity.docid):
-            event.reply(str(entry[u'value'][0]+": "+entry[u'value'][1]))
+            senderDoc = davenport.openDoc(str(entry[u'value'][0]))
+            senderDoc = yield senderDoc
+            event.reply(str(senderDoc[u'name']+": "+entry[u'value'][1]))
 
 @hook('privmsg',expr='npx')
 def MuupDuup(event):
     if ((event.source.nick == 'npx') and ((not hasattr(event.source,"identity")) or (event.source.identity == None))):
-        event.source.identity = Identity(u'107097e10a2cacb7caa6d9d04d7ed8c7')
+        event.source.identity = Identity('107097e10a2cacb7caa6d9d04d7ed8c7')
+        event.source.identity.link(event.source)
+        event.reply("User linked!")
+    elif ((event.source.nick == 'ChosenOne') and ((not hasattr(event.source,"identity")) or (event.source.identity == None))):
+        event.source.identity = Identity('7df575bf24c193a58bb74307a6d3eaca')
         event.source.identity.link(event.source)
         event.reply("User linked!")
