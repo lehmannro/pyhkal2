@@ -94,6 +94,8 @@ class IRCMessage(Event):
         self.content = text
         self.source = avatar
         self.target = location
+    def reply(self,  msg):
+        self.target.message(msg)
 
 class IRCQuery(Location):
     def __init__(self, user):
@@ -205,12 +207,10 @@ class IRCClient(irc.IRCClient, object):
         d = self.getInfo(channel)
         d.addCallback(self.UpdateNickDB)
 
-
     def topicUpdated(self, user, channel, newTopic):
         self.chandb[channel].updateTopic(newTopic, user, timestamp=int(time()) )
 
     def irc_JOIN(self, prefix, params):
-        print "ACHTUNG HIER", params
         #params = params[:-1] + params[-1].replace(':','')
         irc.IRCClient.irc_JOIN(self, prefix, params)
         nick = prefix.split('!', 1)[0]
