@@ -4,11 +4,7 @@
 
     - Ein-/Auslog-Phrase                          [x]
     - AFK-Phrase                                  [x]
-    - Abos requesten von DigestMod                [ ]
-    - Ein und ausloggen via user.py               [x]
 
-
-    user.py uebernimmt identitiy handling!!11!!1EINSELF
 """
 from twisted.internet import defer
 import re
@@ -27,9 +23,7 @@ chaos("PenisViewUSER",
 @hook('privmsg')
 @defer.inlineCallbacks
 def startTheTikkleFun(event):
-    event.reply("InFun")
     if (isinstance(event.target,irc.IRCChannel)):
-        event.reply("InIf")
         # 1) Phrase basteln!
         msg = event.content
 
@@ -38,21 +32,20 @@ def startTheTikkleFun(event):
 
         ######## User ist eingeloggt
         if (ident != None):
-            event.reply("InIf2")
             d = davenport.openDoc(event.source.identity.docid)
             doc = yield d
 
             loginRE = re.compile(doc["tikkle"]["login"])
             logoutRE = re.compile(doc["tikkle"]["logout"])
             afkRE = re.compile(doc["tikkle"]["afk"])
-            event.reply("PreMatch")
+
             if (loginRE.match(event.content) != None):
-                event.reply("doStuff() - ehehehe, Freddy B")
+                event.reply("User recognized - Digests!")
                 doStuff()
             elif (logoutRE.match(event.content) != None):
                 event.source.identity.avatars.remove(event.source)
                 event.source.identity = None
-                event.reply("Logged out?!")
+                event.reply("User unlinked!")
             elif (afkRE.match(event.content) != None):
                 # set last activity
                 event.reply("Set Last activity!")
@@ -65,4 +58,4 @@ def MuupDuup(event):
     if (event.source.nick == 'npx'):
         event.source.identity = Identity("107097e10a2cacb7caa6d9d04d7ed8c7")
         event.source.identity.link(event.source)
-        print "Locked n' Linked!"
+        event.reply("User linked!")
