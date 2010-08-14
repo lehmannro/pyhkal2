@@ -36,7 +36,7 @@ def hook(service, event, expr=None):
     def deco(func):
         if expr:
             def new_func(event):
-                if comp_re.match(event.content):
+                if comp_re.search(event.content):
                     return func(event)
         else:
             new_func = func
