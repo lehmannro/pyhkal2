@@ -62,8 +62,11 @@ expose(Pyhkal.twist)
 def chaos(service, name, script):
     mod = currentframe().f_back.f_globals['__mod__']
     service.davenport.order(mod, name, script)
-    def call(cb):
-        return service.davenport.openView(mod, name).addCallback(cb)
+    def call(cb=None):
+        d = service.davenport.openView(mod, name)
+        if cb is not None:
+            d.addCallback(cb)
+        return d
     return call
 
 @expose
