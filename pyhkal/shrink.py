@@ -80,5 +80,5 @@ class Event(object):
         self.source = source
         self.content = content
 
-    def reply(self):
-        raise NotImplementedError
+    def reply(self, msg):
+        self.target.message(msg)
