@@ -137,7 +137,7 @@ class IRCClient(irc.IRCClient, object):
     def UpdateNickDB(self, resultlist):
         for user in resultlist:
             self.nickdb[user['nick']] = IRCUser(**user)
-
+        dispatch_event("irc.updatenickdb", self.nickdb)
         #print "UpdateToNickkDB:", resultlist
         #print "NickDB:", self.nickdb
     
@@ -259,7 +259,8 @@ class IRCClient(irc.IRCClient, object):
             """irc.quakenet.org 324 woobie #channel +tncCNul 30 """
             channel = spacetuple[3]
             modes = spacetuple[4] if (spacetuple[4][0] != '+') else spacetuple[4][1:]
-            params = spacetuple[5].split()
+            if (len(spacetuple) > 5):
+                params = spacetuple[5].split()
             #print "NUUUUU", self.supported.getFeature('CHANMODES')
             #NUUUUU {'noParam': 'imnpstrDducCNMT', 'setParam': 'l', 'addressModes': 'b', 'param': 'k'}
             def want_param(mode):
