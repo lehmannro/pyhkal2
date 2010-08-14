@@ -1,10 +1,11 @@
 # encoding: utf-8
 
+import re
+import json
 from functools import partial, wraps
 from inspect import getargspec, currentframe
-import re
-from pyhkal import shrink
 from pyhkal.engine import Pyhkal
+from pyhkal import shrink
 
 api = {}
 def apply(service):
@@ -42,7 +43,7 @@ def hook(service, event, expr=None):
                     return func(event)
         else:
             new_func = func
-        
+
         service.add_listener(event, new_func)
         return new_func
     return deco
