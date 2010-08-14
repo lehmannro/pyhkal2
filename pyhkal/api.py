@@ -66,6 +66,8 @@ def chaos(service, name, script):
     mod = currentframe().f_back.f_globals['__mod__']
     service.davenport.order(mod, name, script)
     def call(cb=None, **kwargs):
+        if 'key' in kwargs:
+            kwargs['key'] = json.dumps(kwargs['key'])
         d = service.davenport.openView(mod, name, **kwargs)
         if cb is not None:
             d.addCallback(cb)
