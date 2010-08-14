@@ -305,7 +305,7 @@ class IRCClient(irc.IRCClient, object):
             if spacetuple[3].isdigit() or spacetuple[3][0] == '#':
                 resultdict = dict(zip( ('ident', 'host', 'nick', 'flags', 'auth', 'realname'), spacetuple[4:9] + [colontuple[2],] ))
                 resultdict['away'] = ('G' in resultdict['flags']) 
-                resultdict['auth'] = None if (resultdict['auth'] == 0) else resultdict['auth']
+                resultdict['auth'] = None if (resultdict['auth'] == "0") else resultdict['auth']
                 ID = spacetuple[3] #this might be our numeric ID or the channel matching our rquest
                 #print "<<got authnickidentfooline>", repr(resultdict), ID
                 if ID in self.whoresults: # WHO results. how funny would "whore-sluts" be,?! :P
