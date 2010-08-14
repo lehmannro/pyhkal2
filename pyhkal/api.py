@@ -12,7 +12,7 @@ def apply(service):
     #XXX raw expose decorator
     for o in shrink.Avatar, shrink.Event, shrink.Location:
         applied[o.__name__] = o
-    applied['Identity'] = IdentityFactory(service)
+    applied['Identity'] = shrink.IdentityFactory(service)
     applied['davenport'] = service.davenport
     return applied
 
