@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-from twittytwister import twitter
+from twittytwister.twitter import Twitter
 from oauth import oauth
 from twisted.internet.task import LoopingCall
+
 
 con = oauth.OAuthConsumer(
                 remember('twitter consumer key'),
@@ -54,7 +55,7 @@ class User(Avatar):
     
     
 def twit():
-    return twitter.Twitter(consumer=con, token=tok)
+    return Twitter(consumer=con, token=tok)
 
 def tweet(msg, params=None):
     params = params or {}
@@ -72,8 +73,10 @@ def reply_delegate(msg):
     ATOM!!!
     function to handle replies to pyhkals tweet
     """
+    #print msg
     id = extract_id(msg.id)
-    source = User(msg.author.name)
+    name = msg.title.split(':',1)[0]
+    source = User(name)
     target = Reply(id)
     realmsg = msg.title.split(':',1)[1]
     e = Tweet(target, source, realmsg, id)
