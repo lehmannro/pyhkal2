@@ -75,10 +75,10 @@ def reply_delegate(msg):
     id = extract_id(msg.id)
     source = User(msg.author.name)
     target = Reply(id)
-    realmsg = msg.split(':',1)[1]
+    realmsg = msg.title.split(':',1)[1]
     e = Tweet(target, source, realmsg, id)
     # create another event without @PyHKAL in msg.title
-    e2 = Tweet(target, source, realmsg.title.split(' ',2)[2], id)
+    e2 = Tweet(target, source, realmsg.split(' ',2)[2], id)
     dispatch_event('twitter.reply', e2)
     dispatch_event('twitter.privmsg', e)
     dispatch_event('privmsg', e)
