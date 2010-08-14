@@ -12,11 +12,20 @@ Deal with it. NUUUU :(((
 __version__ = "0.1"
 __requires__ = ["irc"]
 
-@register
-def stfu(origin, args):
-    dispatch_event('irc.send', "MODE %s +m" % origin.public)
+from time import time
 
-@hook("shutdown")
-def save():
-    for chan in bot.get(NAME, "channels"):
-        bot.setmode(chan, "-m")
+@hook("irc.privmsg", expr='stfu')
+def togglemute(ircmsg):
+    # IRCMessage(self.nickdb[nick], self.chandb[recip], message)
+    if isinstance(ircmsg.target, irc.IRCChannel):
+        chan = ircmsg.target
+        if not hasattr(chan,'stfu'):
+            chan.stfu = {'lock': 0}
+        if 'm' in chan.modes:
+            if time() > (chan.stfu['lock']+3):
+                dispatch_event('irc.send', "MODE %s -m" % chan.name)
+        else:
+            chan.stfu = {'lock': time()}
+            dispatch_event("irc.sendmessage", chan.name, "cool story, bro")
+            dispatch_event('irc.send', "MODE %s +m" % chan.name)
+

@@ -53,4 +53,4 @@ class Pyhkal(service.Service):
         #+ subcommand dispatch
         #+ check for number of arguments
         if command in self.commands:
-            self.commands[command](event, *args)
+            self.commands[command](*args)

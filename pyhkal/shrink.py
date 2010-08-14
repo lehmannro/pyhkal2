@@ -1,35 +1,84 @@
 #!/usr/bin/env python
+"""
+Implementation of Identity/Avatar scheme.
+
+           +-----------+
+           |   Event   |
+           +-----------+
+           | + reply() |
+           | - content |
+           +-----------+
+            |        |
+            |        |
++-------------+     +-------------+
+|    Avatar   |     |  Location   |
++-------------+     +-------------+
+| + message() |     | + message() |
+| - identity  |     +-------------+
++-------------+
+       #
+       |
+       |
+ +-----------+
+ |  Identity |
+ +-----------+
+ | - avatars |
+ +-----------+
+
+"""
 
 from _weakrefset import WeakSet
 
-"""
-Implementation of the Identity/Avatar scheme
-"""
-
 class Avatar(object):
     """
-    Avatars represent the different 
-    manifestations of Identities in
-    different media/transports
+    Avatars represent the different manifestations of identities in different
+    communication channels.
     """
 
+    def __init__(self):
+        self.identity = None
+
     def message(self, msg):
-        pass
+        raise NotImplementedError
+
+class Location(object):
+    def message(self, msg):
+        raise NotImplementedError
 
 
 class Identity(object):
     """
-    Identities are unique reprenstations
-    of media-independant identities that 
-    can be linked to avatars
+    Identities are abstract persons which persist throughout several sessions.
+    They can be associated to several avatars.
 
-    Use id.avatars.add to add an avatar
+    The `link` method adds an avatar to its available representation.
 
-    Avatars are removed automagically
-    when all references are lost due 
-    to weak references used by WeakSet
+    Avatars are automatically removed when all references are lost due the
+    reference's weakness.
     """
 
-    def __init__(self):
+    INSTANCES = {}
+    def __new__(cls, docid):
+        if docid not in cls.INSTANCES:
+            cls.INSTANCES[docid] = object.__new__(cls, docid)
+        return cls.INSTANCES[docid]
+
+    def __init__(self, docid):
+        self.docid = docid
         self.avatars = WeakSet()
 
+    def link(self, avatar):
+        if avatar.identity not in (None, self):
+            raise ValueError("double link from %r to %r and %r" %
+                    (avatar, self, avatar.identity))
+        self.avatars.add(avatar)
+        avatar.identity = self
+
+class Event(object):
+    def __init__(self, target, source, content):
+        self.target = target
+        self.source = source
+        self.content = content
+
+    def reply(self, msg):
+        self.target.message(msg)
