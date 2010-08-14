@@ -88,7 +88,7 @@ def reply_delegate(msg):
         commands and dispatch if found
         """
         if event.content.strip():
-            command = event.content.split(' ')[1]
+            command = event.content.split(' ')[0]
             dispatch_command(command, event)
     
     command_check(e2)
@@ -108,13 +108,4 @@ refresher = LoopingCall(refresh_task)
 def startup():
     refresher.start(REFRESHDELAY)
     
-    
-
-
-#@hook('privmsg')
-#def test(event):
-#    tweet(event.content.split(' ', 1)[1]).addBoth(event.reply)
-
-
-
 

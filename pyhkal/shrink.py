@@ -78,6 +78,7 @@ def IdentityFactory(service):
 
         def fetch(self):
             return service.davenport.openDoc(self.docid)
+    return Identity
 
 
 class Event(object):
