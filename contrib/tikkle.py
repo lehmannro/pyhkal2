@@ -12,10 +12,10 @@ __version__ = "0.1a"
 __requires__ = ["irc"]
 
 
-chaos("PenisViewUSER",
+tikkleView = chaos("tikkleTIKKLE",
     """
-        if (doc.tikkle) {
-            emit(null, doc.tikkle)
+        if (doc.doctype == "tikkle") {
+            emit(doc.to, [doc.from, doc.msg]);
         }
     """
 )
@@ -32,7 +32,7 @@ def startTheTikkleFun(event):
 
         ######## User ist eingeloggt
         if (ident != None):
-            d = davenport.openDoc(event.source.identity.docid)
+            d = davenport.openDoc(str(event.source.identity.docid))
             doc = yield d
 
             loginRE = re.compile(doc["tikkle"]["login"])
@@ -41,7 +41,7 @@ def startTheTikkleFun(event):
 
             if (loginRE.match(event.content) != None):
                 event.reply("User recognized - Digests!")
-                doStuff()
+                doStuff(event)
             elif (logoutRE.match(event.content) != None):
                 event.source.identity.avatars.remove(event.source)
                 event.source.identity = None
@@ -50,12 +50,19 @@ def startTheTikkleFun(event):
                 # set last activity
                 event.reply("Set Last activity!")
 
-def doStuff():
-    print "DOOOSTUUUUUUFFFFFFF!!!111222"
+def doStuff(event):
+    fetchTikkles(event)
+
+@defer.inlineCallbacks
+def fetchTikkles(event):
+    entries = yield tikkleView()
+    for entry in entries[u'rows']:
+        if (entry[u'key'] == event.source.identity.docid):
+            event.reply(str(entry[u'value'][0]+": "+entry[u'value'][1]))
 
 @hook('privmsg',expr='npx')
 def MuupDuup(event):
-    if (event.source.nick == 'npx'):
-        event.source.identity = Identity("107097e10a2cacb7caa6d9d04d7ed8c7")
+    if ((event.source.nick == 'npx') and ((not hasattr(event.source,"identity")) or (event.source.identity == None))):
+        event.source.identity = Identity(u'107097e10a2cacb7caa6d9d04d7ed8c7')
         event.source.identity.link(event.source)
         event.reply("User linked!")
