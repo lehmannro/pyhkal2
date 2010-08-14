@@ -3,16 +3,15 @@
 from functools import partial
 from inspect import getargspec, currentframe
 import re
+from pyhkal import shrink
 from pyhkal.engine import Pyhkal
-from pyhkal.shrink import Avatar
-from pyhkal.event import Event, Location
 
 api = {}
 def apply(service):
     applied = dict((name, partial(func, service)) for name, func in api.iteritems())
-    applied['Avatar'] = Avatar
-    applied['Location'] = Location
-    applied['Event'] = Event
+    #XXX raw expose decorator
+    for o in shrink.Avatar, shrink.Event, shrink.Location, shrink.Identity:
+        applied[o.__name__] = o
     applied['davenport'] = service.davenport
     return applied
 
