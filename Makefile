@@ -16,12 +16,15 @@ check: install
 
 pylint: install; SH='/bin/bash'
 	cd "${VIRTUALENV}";\
-	for version in `echo lib/python*/site-packages/`; do cd "$${version}"; pylint pyhkal; done
+	for version in `echo lib/python*/site-packages/`; do cd "$${version}"; pylint -E pyhkal; done
 
 virtualenv:
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
 	$(VIRTUALENV)/bin/pip -q install Twisted
 	$(VIRTUALENV)/bin/pip -q install paisley
+	$(VIRTUALENV)/bin/pip -q install pyopenssl
+	$(VIRTUALENV)/bin/pip -q install oauth
+	$(VIRTUALENV)/bin/pip -q install twittytwister
 	$(VIRTUALENV)/bin/pip -q install PyYAML
 $(VIRTUALENV):
 	make virtualenv
