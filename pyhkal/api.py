@@ -10,8 +10,9 @@ api = {}
 def apply(service):
     applied = dict((name, partial(func, service)) for name, func in api.iteritems())
     #XXX raw expose decorator
-    for o in shrink.Avatar, shrink.Event, shrink.Location, shrink.Identity:
+    for o in shrink.Avatar, shrink.Event, shrink.Location:
         applied[o.__name__] = o
+    applied['Identity'] = IdentityFactory(service)
     applied['davenport'] = service.davenport
     return applied
 

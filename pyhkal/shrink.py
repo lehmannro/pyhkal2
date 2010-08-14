@@ -46,33 +46,39 @@ class Location(object):
         raise NotImplementedError
 
 
-class Identity(object):
-    """
-    Identities are abstract persons which persist throughout several sessions.
-    They can be associated to several avatars.
+def IdentityFactory(service):
+    class Identity(object):
+        """
+        Identities are abstract persons which persist throughout several sessions.
+        They can be associated to several avatars.
 
-    The `link` method adds an avatar to its available representation.
+        The `link` method adds an avatar to its available representation.
 
-    Avatars are automatically removed when all references are lost due the
-    reference's weakness.
-    """
+        Avatars are automatically removed when all references are lost due the
+        reference's weakness.
+        """
 
-    INSTANCES = {}
-    def __new__(cls, docid):
-        if docid not in cls.INSTANCES:
-            cls.INSTANCES[docid] = object.__new__(cls, docid)
-        return cls.INSTANCES[docid]
+        INSTANCES = {}
+        def __new__(cls, docid):
+            if docid not in cls.INSTANCES:
+                cls.INSTANCES[docid] = object.__new__(cls, docid)
+            return cls.INSTANCES[docid]
 
-    def __init__(self, docid):
-        self.docid = docid
-        self.avatars = WeakSet()
+        def __init__(self, docid):
+            self.docid = docid
+            self.avatars = WeakSet()
 
-    def link(self, avatar):
-        if avatar.identity not in (None, self):
-            raise ValueError("double link from %r to %r and %r" %
-                    (avatar, self, avatar.identity))
-        self.avatars.add(avatar)
-        avatar.identity = self
+        def link(self, avatar):
+            if avatar.identity not in (None, self):
+                raise ValueError("double link from %r to %r and %r" %
+                        (avatar, self, avatar.identity))
+            self.avatars.add(avatar)
+            avatar.identity = self
+            return self
+
+        def fetch(self):
+            return service.davenport.openDoc(self.docid)
+
 
 class Event(object):
     def __init__(self, target, source, content):
