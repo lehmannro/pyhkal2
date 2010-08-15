@@ -181,16 +181,13 @@ def reply_delegate(msg):
     dispatch_event('twitter.message', e)
     dispatch_event('message', e2)
 
-    def command_check():
-        """ Scan msg or event.content for
-        commands and dispatch if found
-        """
-        event = Tweet(target, source, realmsg.split(' ',2)[2], id)
-        if event.content.strip():
-            command = realmsg.split(' ',2)[1]
-            dispatch_command(command, event)
-
-    command_check()
+    """ Scan msg or event.content for
+    commands and dispatch if found
+    """
+    event = Tweet(target, source, realmsg.split(' ',2)[2], id)
+    if event.content.strip():
+        command = realmsg.split(' ',2)[1]
+        dispatch_command(command, event)
 
 @collect_with(xml_collect)
 @defer.inlineCallbacks
@@ -229,10 +226,18 @@ def direct_delegate(msg):
     # wait for identity
     yield source.identity_deferred
     target = Mention(msg.id)
-    e = Tweet(target, source, unescape(msg.text), msg.id)
+    realmsg = unescape(msg.text)
+    e = Tweet(target, source, realmsg, msg.id)
     dispatch_event('twitter.direct', e)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
+    """ Scan msg or event.content for
+    commands and dispatch if found
+    """
+    event = Tweet(target, source, realmsg.split(' ',1)[1], id)
+    if event.content.strip():
+        command = realmsg.split(' ',1)[0]
+        dispatch_command(command, event)
 
 
 @defer.inlineCallbacks
