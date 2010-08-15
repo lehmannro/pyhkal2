@@ -28,8 +28,7 @@ def findIdentities(nickdb):
             qauth = nickdb[nickname].auth
             if (qauth != None):
                 print "calling getAuths view, asking for nick %s auth %s" % (nickname, repr(qauth))
-                d = getAuths(key=qauth)
-                result = yield d
+                result = yield getAuths(key=qauth)
                 if len(result[u'rows']) > 0:
                     docid = result[u'rows'][0][u'id']
                     #print "Foo-Yielding:", nickname, "id of user", docid
