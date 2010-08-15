@@ -3,7 +3,7 @@
 from pyhkal import shopping
 from twisted.internet import defer
 
-#TODO: Change hooks to commands
+#TODO: should we check in each command for parameter length?
 
 __version__ = "0.1"
 __requires__ = ["irc"]
@@ -18,7 +18,7 @@ def isadmin(source):
         defer.returnValue(identity.get(u'admin',False))
 
 
-@hook("message", expr="!load\s.+")
+@hook("load")
 @defer.inlineCallbacks
 def load_module(event):
     admin = yield isadmin(event.source)
@@ -29,7 +29,7 @@ def load_module(event):
             except BaseException as err: # gotta catch 'm all.
                 event.reply("Error: %s" % err)
 
-@hook("message", expr="!reload\s.+")
+@register("reload")
 @defer.inlineCallbacks
 def reload_module(event):
     admin = yield isadmin(event.source)
@@ -37,7 +37,7 @@ def reload_module(event):
         for module in event.content.split(" ")[1:]:
             shopping.revoke(module)
 
-@hook("message", expr="!unload\s.+")
+@register("unload")
 @defer.inlineCallbacks
 def unload_module(event):
     admin = yield isadmin(event.source)
@@ -45,7 +45,7 @@ def unload_module(event):
         for module in event.content.split(" ")[1:]:
             shopping.renew(module)
 
-@hook("message", expr="!eval\s.+") 
+@register("eval")
 @defer.inlineCallbacks             
 def eval_code(event):
     admin = yield isadmin(event.source)
@@ -55,7 +55,7 @@ def eval_code(event):
         except Exception as err: # gotta catch 'm all.
             event.reply("Error: %s" % err)
 
-@hook("message", expr="!exec\s.+")
+@register("exec")
 @defer.inlineCallbacks
 def exec_code(event):
     admin = yield isadmin(event.source)
