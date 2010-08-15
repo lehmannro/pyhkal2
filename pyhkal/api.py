@@ -35,14 +35,18 @@ def expose(item_or_name, item=None):
 @expose
 def hook(service, event, expr=None):
     if expr:
-        comp_re = re.compile(expr)
+        comp_re = re.compile(expr, re.UNICODE)
 
     def deco(func):
         if expr:
             @wraps(func)
             def new_func(event):
-                if comp_re.search(event.content):
-                    return func(event)
+                match = comp_re.findall(event.content)
+                for element in match:
+                    if isinstance(element, basestring):
+                        func(event, element)
+                    else: # tuple
+                        func(event, *element)
         else:
             new_func = func
 
