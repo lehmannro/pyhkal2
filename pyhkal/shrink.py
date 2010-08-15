@@ -90,3 +90,6 @@ class Event(object):
 
     def reply(self, msg):
         self.target.message(msg)
+
+    def __repr__(self):
+        return '<%s from %r to %r>' % (self.__class__.__name__, self.source, self.target)
