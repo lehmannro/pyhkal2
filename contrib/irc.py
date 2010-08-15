@@ -260,7 +260,7 @@ class IRCClient(irc.IRCClient, object):
         for encoding in self.encodings:
             try:
                 data = data.decode(encoding)
-                print ">> (%s) %s" % (encoding, repr(data))
+        #        print ">> (%s) %s" % (encoding, repr(data))
                 break
             except UnicodeDecodeError:
                 pass
