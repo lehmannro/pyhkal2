@@ -36,3 +36,10 @@ class Davenport(paisley.CouchDB):
             self.addViews(doc, {by: dict(map=payload)})
             self.saveDoc(doc, docId=docname)
         self.openDoc(docname).addBoth(add_view)
+
+    def deleteDoc(self, dbName, docId, revision=None):
+        return self.delete("/%s/%s?%s" % (
+                dbName,
+                docId,
+                urlencode({'rev': revision})) if revision is not None else ''
+            ).addCallback(self.parseResult)
