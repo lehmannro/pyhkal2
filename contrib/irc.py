@@ -16,6 +16,7 @@ DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
 DEFAULT_NAME = "PyHKAL 2.0"
 DEFAULT_PREFIX = "!"
+DEFAULT_ENCODINGS = ['utf-8', 'iso-8859-15']
 
 __settings__ = dict(
     irc = dict(
@@ -40,6 +41,8 @@ __settings__ = dict(
         channels = """List of channels which will be joined on sign-on.
             Channels need to start with any neccessary prefixes defined by the
             IRC server (eg. ``#`` or ``&``).""",
+        encodings = """List of encodings which are used for incoming messages.
+            Defaults to ``%s``""" % repr(DEFAULT_ENCODINGS)
     )
 )
 
@@ -240,9 +243,20 @@ class IRCClient(irc.IRCClient, object):
         nick = prefix.split('!', 1)[0]
         del(self.nickdb[nick])
 
+    def sendLine(self, line):
+        if isinstance(line, unicode):
+            line = line.encode("utf-8")
+        irc.IRCClient.sendLine(self, line)
+
     def lineReceived(self, data): 
+        for encoding in self.encodings:
+            try:
+                data = data.decode(encoding)
+                print ">> (%s) %s" % (encoding, repr(data))
+                break
+            except UnicodeDecodeError:
+                pass
         irc.IRCClient.lineReceived(self, data)
-        print ">> ", data
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
@@ -359,7 +373,8 @@ class IRCClientFactory(protocol.ReconnectingClientFactory):
         p.password = str(remember("irc key", None))
         p.prefix = str(remember("irc prefix", DEFAULT_PREFIX))
         p.channels = map(str, remember("irc channels", []))
-        p.lineRate = 1/self.factor;
+        p.encodings = remember("irc encodings", DEFAULT_ENCODINGS)
+        p.lineRate = 1/self.factor
         return p
     def clientConnectionFailed(self, connector, reason):
         print reason.value
