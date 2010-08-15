@@ -2,9 +2,9 @@
 #-*- coding:utf-8 -*-
 
 __version__ = "0.1"
-__requires__ = ["irc"]
+#__requires__ = ["irc"]
 
-import time, re, functools
+import datetime, time, re, functools
 
 getKarma = chaos("getKarma","""
     if (doc.doctype == "karma") {
@@ -57,3 +57,7 @@ def karma_say(event, wort):
     else:
         value = 0
     event.reply("%s hat einen karmawert von %s" % (wort, value))
+
+def seconds2string(sec):
+    return str(datetime.timedelta(seconds=sec))[2:]
+
