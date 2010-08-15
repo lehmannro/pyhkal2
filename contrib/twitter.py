@@ -149,8 +149,8 @@ def reply_delegate(msg):
     e2 = Tweet(target, source, realmsg.split(' ',2)[2], id)
     dispatch_event('twitter.reply', e2)
     dispatch_event('twitter.mention', e)
-    dispatch_event('twitter.msg', e)
-    dispatch_event('msg', e)
+    dispatch_event('twitter.message', e)
+    dispatch_event('message', e2)
 
     def command_check(event):
         """ Scan msg or event.content for
@@ -169,8 +169,8 @@ def friend_delegate(msg):
     source = User(msg.user.screen_name)
     target = Friend(msg.id)
     e = Tweet(target, source, unescape(msg.text), msg.id)
-    dispatch_event('twitter.msg', e)
-    dispatch_event('msg', e)
+    dispatch_event('twitter.message', e)
+    dispatch_event('message', e)
 
 def mention_delegate(msg):
     """
@@ -180,9 +180,9 @@ def mention_delegate(msg):
     source = User(msg.user.screen_name)
     target = Mention(msg.id)
     e = Tweet(target, source, unescape(msg.text), msg.id)
-    dispatch_event('twitter.msg', e)
     dispatch_event('twitter.mention', e)
-    dispatch_event('msg', e)
+    dispatch_event('twitter.message', e)
+    dispatch_event('message', e)
 
 
 # TODO change collect funtions to xml_collect 
