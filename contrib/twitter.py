@@ -146,14 +146,13 @@ def reply_delegate(msg):
     # wait for identity
     yield source.identity_deferred
     target = Reply(id)
-    realmsg = msg.title.split(':',1)[1]
+    realmsg = msg.title.split(': ',1)[1]
     e = Tweet(target, source, realmsg, id)
     # create another event without @PyHKAL in msg.title
     e2 = Tweet(target, source, realmsg.split(' ',1)[1], id)
     dispatch_event('twitter.reply', e2)
     dispatch_event('twitter.mention', e)
     dispatch_event('twitter.message', e)
-    print 'dispatching message', e2.content
     dispatch_event('message', e2)
 
     def command_check():
@@ -213,9 +212,18 @@ def refresh_task():
     global since_id
     collection = {}
     params = {'since_id':str(since_id)}
-    yield twit().friends(partial(friend_collect, collection), params=params)
-    yield twit().mentions(partial(mention_collect, collection), params=params)
-    yield twit().replies(partial(reply_collect, collection), params=params)
+    try:
+        yield twit().friends(partial(friend_collect, collection), params=params)
+    except:
+        pass
+    try:
+        yield twit().mentions(partial(mention_collect, collection), params=params)
+    except:
+        pass
+    try:
+        yield twit().replies(partial(reply_collect, collection), params=params)
+    except:
+        pass
 
     for msg_id, (msg, delegate) in collection.iteritems():
         int_id = int(msg_id)
