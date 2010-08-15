@@ -23,7 +23,7 @@ def isadmin(source):
 def load_module(event):
     admin = yield isadmin(event.source)
     if admin:
-        for module in event.content.split(" ")[1:]:
+        for module in event.content:
             try:
                 shopping.buy(module)
             except BaseException as err: # gotta catch 'm all.
@@ -34,7 +34,7 @@ def load_module(event):
 def reload_module(event):
     admin = yield isadmin(event.source)
     if admin:
-        for module in event.content.split(" ")[1:]:
+        for module in event.content:
             shopping.revoke(module)
 
 @register("unload")
@@ -42,7 +42,7 @@ def reload_module(event):
 def unload_module(event):
     admin = yield isadmin(event.source)
     if admin:
-        for module in event.content.split(" ")[1:]:
+        for module in event.content:
             shopping.renew(module)
 
 @register("eval")
@@ -51,7 +51,8 @@ def eval_code(event):
     admin = yield isadmin(event.source)
     if admin:
         try:
-            event.reply(eval(event.content.split(" ", 1)[1]))
+            print event.content
+            event.reply(eval(event.content))
         except Exception as err: # gotta catch 'm all.
             event.reply("Error: %s" % err)
 
@@ -61,7 +62,3 @@ def exec_code(event):
     admin = yield isadmin(event.source)
     if admin:
         exec event.content.split(" ", 1)[1] in globals()
-
-@hook("message", expr="!addidentiy") # "Was hat sich der Autor dabei gedacht?"
-def foo(event):
-    pass
