@@ -70,6 +70,13 @@ class IRCChannel(Location):
         self.nicklist = {}
         self.modes  = {}
 
+    def __contains__(user):
+        if isinstance(user, IRCUser):
+            return IRCUser.nick in self.nicklist
+
+        elif isinstance(user, basestring):
+            return user in self.nicklist
+
     def updateTopic(self, topic, nick, timestamp=None):
         self.topic = topic
         self.topictimestamp = timestamp
@@ -165,7 +172,7 @@ class IRCClient(irc.IRCClient, object):
         else:
             target = self.chandb[recip]
         event = IRCMessage(self.nickdb[nick], target, message)
-        dispatch_event("privmsg", event)
+        dispatch_event("message", event)
         dispatch_event("irc.privmsg", event)
 
         if message.startswith(self.prefix):
