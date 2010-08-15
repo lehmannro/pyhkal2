@@ -16,20 +16,20 @@ __requires__ = ["irc"]
 tikkleView = chaos("tikkleTIKKLE",
     """
         if (doc.doctype == "tikkle") {
-            emit(doc.to, [doc.from, doc.msg]);
+            emit(doc.to, [doc.from, doc.msg, doc._rev]);
         }
     """
 )
-tikkleUserView = chaos("tikkleUserView",
+tikkleIdentityView = chaos("tikkleIdentityView",
     """
-        if (doc.doctype == "user") {
+        if (doc.doctype == "Identity") {
             emit("User", doc.name);
         }
     """
 )
 
 ## Digest Control
-@hook('privmsg')
+@hook('irc.privmsg')
 @defer.inlineCallbacks
 def startTheTikkleFun(event):
     if ((isinstance(event.target,irc.IRCChannel)) and (hasIdentity(event))):
@@ -57,31 +57,32 @@ def doStuff(event):
 @defer.inlineCallbacks
 def fetchTikkles(event):
     entries = yield tikkleView()
+    print "----------------"+str(entries)
     for entry in entries[u'rows']:
         if (entry[u'key'] == event.source.identity.docid):
             senderDoc = davenport.openDoc(str(entry[u'value'][0]))
             senderDoc = yield senderDoc
             event.source.message(str(senderDoc[u'name']+": "+entry[u'value'][1]))
+            davenport.deleteDoc(str(entry[u'id']), str(entry[u'value'][2]))
 
 ## Send Messages
-@hook('privmsg',expr='^tikkle tikkle .*')
+@hook('irc.privmsg',expr='^tikkle tikkle .*')
+@defer.inlineCallbacks
 def sendMsg(event):
-    print "------------------------- AGAGAGAGAGG"
     # msg = [tikkle, tikkle, <identity name>, <text>]
     msg = event.content.split(' ')
-    event.reply(msg)
-    if ((msg[1] == tikkle) and (hasIdentity(event))):
-        event.reply("woo")
+    if ((msg[1] == "tikkle") and (hasIdentity(event))):
         sent = False
         tikkle = {}
-        users = yield tikkleUserView()
-        for user in users:
+        users = yield tikkleIdentityView()
+        for user in users[u'rows']:
             if (str(user[u'value']) == msg[2]):
                 tikkle["from"] = event.source.identity.docid
                 tikkle["to"] = user[u'id']
                 tikkle["msg"] = " ".join(msg[3:])
-                davenport.saveDoc()
-                event.reply(user)
+                tikkle["doctype"] = "tikkle"
+                davenport.saveDoc(tikkle)
+                event.reply("Brief: "+str(tikkle))
                 sent = True
                 break
         if sent:
@@ -93,7 +94,7 @@ def hasIdentity(event):
     return not ((hasattr(event.source,"identity")) and (event.source.identity == None))
 
 ## Hardcoded Identity
-@hook('privmsg',expr='npx')
+@hook('irc.privmsg',expr='npx')
 def MuupDuup(event):
     if ((event.source.nick == 'npx') and ((not hasattr(event.source,"identity")) or (event.source.identity == None))):
         event.source.identity = Identity('107097e10a2cacb7caa6d9d04d7ed8c7')
