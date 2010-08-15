@@ -120,7 +120,7 @@ def send_message(dst, msg):
     dispatch_event("irc.send", "PRIVMSG %s :%s" % (dst, msg))
 
 @hook("irc.sendnotice")
-def send_message(dst, msg):
+def send_notice(dst, msg):
     # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
     dispatch_event("irc.send", "NOTICE %s :%s" % (dst, msg))
 
