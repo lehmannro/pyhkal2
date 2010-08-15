@@ -3,6 +3,7 @@
 "Internet Relay Chat transport layer"
 
 __version__ = 0.1
+__author__ = "freddyb"
 
 from twisted.application import internet
 from twisted.internet import protocol, reactor, defer

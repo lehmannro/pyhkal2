@@ -9,7 +9,7 @@
 """
 from twisted.internet import defer
 import re
-import time
+import datetime
 
 __version__ = "0.1a"
 __requires__ = []
@@ -50,7 +50,7 @@ def fetchTikkles(event):
     for entry in entries[u'rows']:
         senderDoc = davenport.openDoc(str(entry[u'value'][0]))
         senderDoc = yield senderDoc
-        mtime = str(time.strftime("[%d.%m|%H:%m]", time.gmtime(entry[u'value'][3])))
+        mtime = datetime.datetime.fromtimestamp(entry[u'value'][2]).strftime("[%d.%m|%H:%M]")
         event.source.message(mtime+" <"+str(senderDoc[u'name']+"> "+entry[u'value'][1]))
         davenport.deleteDoc(str(entry[u'id']), str(entry[u'value'][2]))
 
@@ -66,7 +66,7 @@ def sendMsg(event):
         users = yield tikkleIdentityView()
         for user in users[u'rows']:
             if (str(user[u'value']) == msg[2]):
-                tikkle["time"] = time.time()
+                tikkle["time"] = int(datetime.datetime.now().strftime("%s"))
                 tikkle["from"] = event.source.identity.docid
                 tikkle["to"] = user[u'id']
                 tikkle["msg"] = " ".join(msg[3:])

@@ -11,6 +11,7 @@ Deal with it. NUUUU :(((
 
 __version__ = "0.1"
 __requires__ = ["irc"]
+__author__ = "freddyb"
 
 from time import time
 
