@@ -26,6 +26,6 @@ def togglemute(ircmsg):
                 dispatch_event('irc.send', "MODE %s -m" % chan.name)
         else:
             chan.stfu = {'lock': time()}
-            dispatch_event("irc.sendmessage", chan.name, "cool story, bro")
+            ircmsg.reply("cool story, bro")
             dispatch_event('irc.send', "MODE %s +m" % chan.name)
 
