@@ -24,7 +24,7 @@ class Pyhkal(service.Service):
     def startService(self):
         #XXX reloadable
         db = self.screwdriver['database']
-        self.debug = remember('debug', False)
+        self.debug = self.screwdriver.get('debug', False)
         self.davenport = Davenport(db['host'], 'pyhkal', db['username'],
                 db['password'], db['port'])
         self.listeners = collections.defaultdict(WeakSet)
