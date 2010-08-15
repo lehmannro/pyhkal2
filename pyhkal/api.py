@@ -2,9 +2,9 @@
 
 import re
 import json
+import twisted.internet.defer
 from functools import partial, wraps
 from inspect import getargspec, currentframe
-from twisted.internet import defer
 from pyhkal.engine import Pyhkal
 from pyhkal import shrink
 
