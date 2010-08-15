@@ -3,6 +3,7 @@
 
 __version__ = "0.1"
 #__requires__ = ["irc"]
+__author__ = "freddyb"
 
 import datetime, time, re, functools
 
