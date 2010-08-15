@@ -78,7 +78,7 @@ def extract_id(str):
     return id
 
 
-class Tweet(Event):
+class TweetEvent(Event):
     def __init__(self, target, source, content, id):
         Event.__init__(self, target, source, content)
         self.id = id
@@ -86,10 +86,12 @@ class Tweet(Event):
         return self.target.reply("@%s %s" % (self.source.name, msg))
 
 
-class TwitterLoc(Location):
+class Tweet(Location):
     def __init__(self, id):
+        Location.__init__(self)
         self.id = id
 
+class PublicTweet(Tweet):
     def message(self, msg, params=None):
         return tweet(msg, params)
 
@@ -98,16 +100,33 @@ class TwitterLoc(Location):
                     msg,
                     params={'in_reply_to_status_id':self.id}
                 )
-class Reply(TwitterLoc):
+    def retweet(self):
+        return retweet(self.id)
+
+class PrivateTweet(Tweet):
+    def __init__(self, id, sender):
+        self.id = id
+        self.sender = sender
+    def message(self, msg, params=None):
+        return direct_message(msg, self.sender, params)
+    def reply(self, msg):
+        return self.message(msg)
+
+class Reply(PublicTweet):
     pass
 
-class Friend(TwitterLoc):
+class Friend(PublicTweet):
     pass
 
-class Mention(TwitterLoc):
+class Mention(PublicTweet):
+    pass
+
+
+class Direct(PrivateTweet):
     pass
 
 class User(Avatar):
+    __metaclass__ = MultitonMeta
     def __init__(self, name):
         Avatar.__init__(self)
         self.name = name
@@ -119,10 +138,9 @@ class User(Avatar):
         if res['rows']:
             identity = Identity(res['rows'][0]['id'])
             identity.link(self)
-            print '+'*20, 'linked', self.name
 
     def message(self, msg, params=None):
-        return twit().send_direct_message(msg, self.name, params)
+        return direct_message(msg, self.name, params)
     def __eq__(self, obj):
         return isinstance(obj, User) and self.name.lower() == obj.name.lower()
     def __hash__(self):
@@ -136,9 +154,21 @@ def tweet(msg, params=None):
     params = params or {}
     return twit().update(msg,  params=params)
 
-def tweet_direct(msg, user, params=None):
+def retweet(id, delegate=lambda x: 0):
+    return twit().retweet(id, delegate)
+
+def direct_message(msg, user, params=None):
     params = params or {}
     return twit().send_direct_message(msg, screen_name=user, params=params)
+
+def follow(user):
+    return twit().follow(user)
+
+def leave(user):
+    return twit().leave(user)
+
+def block(user):
+    return twit().block(user)
 
 
 
@@ -147,12 +177,10 @@ def tweet_direct(msg, user, params=None):
 
 
 def atom_collect(collection, delegate, msg):
-    print delegate.func_name, msg.title
     msg_id = extract_id(msg.id)
     collection[msg_id] = msg, delegate
 
 def xml_collect(collection, delegate, msg):
-    print delegate.func_name, msg.text
     collection[msg.id] = msg, delegate
 
 def collect_with(collector):
@@ -168,7 +196,6 @@ def reply_delegate(msg):
     ATOM!!!
     function to handle replies to pyhkals tweet
     """
-    #print msg
     id = extract_id(msg.id)
     name = msg.title.split(':',1)[0]
     source = User(name)
@@ -176,24 +203,21 @@ def reply_delegate(msg):
     yield source.identity_deferred
     target = Reply(id)
     realmsg = msg.title.split(': ',1)[1]
-    e = Tweet(target, source, realmsg, id)
+    e = TweetEvent(target, source, realmsg, id)
     # create another event without @PyHKAL in msg.title
-    e2 = Tweet(target, source, realmsg.split(' ',1)[1], id)
+    e2 = TweetEvent(target, source, realmsg.split(' ',1)[1], id)
     dispatch_event('twitter.reply', e2)
     dispatch_event('twitter.mention', e)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e2)
 
-    def command_check():
-        """ Scan msg or event.content for
-        commands and dispatch if found
-        """
-        event = Tweet(target, source, realmsg.split(' ',2)[2], id)
-        if event.content.strip():
-            command = realmsg.split(' ',2)[1]
-            dispatch_command(command, event)
-
-    command_check()
+    """ Scan msg or event.content for
+    commands and dispatch if found
+    """
+    event = TweetEvent(target, source, realmsg.split(' ',2)[2], id)
+    if event.content.strip():
+        command = realmsg.split(' ',2)[1]
+        dispatch_command(command, event)
 
 @collect_with(xml_collect)
 @defer.inlineCallbacks
@@ -205,7 +229,7 @@ def friend_delegate(msg):
     # wait for identity
     yield source.identity_deferred
     target = Friend(msg.id)
-    e = Tweet(target, source, unescape(msg.text), msg.id)
+    e = TweetEvent(target, source, unescape(msg.text), msg.id)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
 
@@ -220,7 +244,7 @@ def mention_delegate(msg):
     # wait for identity
     yield source.identity_deferred
     target = Mention(msg.id)
-    e = Tweet(target, source, unescape(msg.text), msg.id)
+    e = TweetEvent(target, source, unescape(msg.text), msg.id)
     dispatch_event('twitter.mention', e)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
@@ -228,7 +252,22 @@ def mention_delegate(msg):
 @collect_with(xml_collect)
 @defer.inlineCallbacks
 def direct_delegate(msg):
-    pass
+    source = User(msg.sender.screen_name)
+    # wait for identity
+    yield source.identity_deferred
+    target = Direct(msg.id, source.name)
+    realmsg = unescape(msg.text)
+    e = TweetEvent(target, source, realmsg, msg.id)
+    dispatch_event('twitter.direct', e)
+    dispatch_event('twitter.message', e)
+    dispatch_event('message', e)
+    """ Scan msg or event.content for
+    commands and dispatch if found
+    """
+    event = TweetEvent(target, source, realmsg.split(' ',1)[1], id)
+    if event.content.strip():
+        command = realmsg.split(' ',1)[0]
+        dispatch_command(command, event)
 
 
 @defer.inlineCallbacks
@@ -245,7 +284,6 @@ def refresh_task():
     for task, delegate in tasks:
         params = {'since_id':str(since_id)} \
                  if since_id > 0 else {}
-        print params
         yield task(
                     partial(
                         delegate.collector,
@@ -261,6 +299,13 @@ def refresh_task():
             since_id = int_id
         delegate(msg)
 
+    try:
+        doc = yield davenport.openDoc('twitter')
+    except:
+        doc = {}
+    doc['since_id'] = since_id
+    davenport.saveDoc(doc, 'twitter')
+
 #    return twit().replies(lambda x: reply_collect(collection, x), params={'since_id':str(since_id)}).addBoth(
 #                lambda x: twit().friends(lambda x: friend_collect(collection,x), params={'since_id':str(since_id)}).addBoth(lambda x: refresh_done(collection))
 #            )
@@ -272,7 +317,15 @@ refresher = LoopingCall(refresh_task)
 
 # Initialization
 @hook('startup')
+@defer.inlineCallbacks
 def startup():
+    global since_id
+    try:
+        doc = yield davenport.openDoc('twitter')
+        since_id = doc['since_id']
+    except:
+        pass
+
     refresher.start(REFRESHDELAY)
 
 
