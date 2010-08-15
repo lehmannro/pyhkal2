@@ -117,7 +117,7 @@ class IRCQuery(Location):
 @hook("irc.sendmessage")
 def send_message(dst, msg):
     # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
-    dispatch_event("irc.send", "PRIVMSG %s :%s" % (dst, msg))
+    dispatch_event("irc.send", "NOTICE %s :%s" % (dst, msg))
 
 
 class IRCClient(irc.IRCClient, object):
