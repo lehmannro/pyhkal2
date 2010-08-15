@@ -62,7 +62,7 @@ class IRCUser(Avatar): # TODO: Alle attribute als defer ermöglichen, falls wir 
         return IRCUser(**data)
         
     def message(self, text):
-        dispatch_event("irc.sendmessage", self.nick, text)
+        dispatch_event("irc.sendnotice", self.nick, text)
 
 class IRCChannel(Location):
     def __init__(self, name):
@@ -116,6 +116,11 @@ class IRCQuery(Location):
 
 @hook("irc.sendmessage")
 def send_message(dst, msg):
+    # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
+    dispatch_event("irc.send", "PRIVMSG %s :%s" % (dst, msg))
+
+@hook("irc.sendnotice")
+def send_notice(dst, msg):
     # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
     dispatch_event("irc.send", "NOTICE %s :%s" % (dst, msg))
 
