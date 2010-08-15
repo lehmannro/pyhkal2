@@ -50,10 +50,9 @@ __settings__ = dict(
 class IRCUser(Avatar): # TODO: Alle attribute als defer ermöglichen, falls wir ihn noch nicht haben, können wir ihn doch holen! :))
     def __init__(self, **kwargs):
         # Fall 2: Komplettes dict von nick, ident, host, realname, auth
-        self.identity = None
         for k,v in kwargs.iteritems():
             setattr(self, k, v)
-        assert self.nick != None
+        Avatar.__init__(self.nick)
 
     @staticmethod
     def fromhostmask(hostmask): # Fall 1: IRCUser(hostmask="nick!ident@host") und er hat schonmal 3 Werte
