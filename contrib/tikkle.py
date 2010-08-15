@@ -29,16 +29,16 @@ tikkleIdentityView = chaos("tikkleIdentityView",
 )
 
 ## Digest Control
-@hook('irc.privmsg')
+@hook('message')
 @defer.inlineCallbacks
 def startTheTikkleFun(event):
-    if ((isinstance(event.target,irc.IRCChannel)) and (hasIdentity(event))):
+    if (hasIdentity(event)):
         d = davenport.openDoc(str(event.source.identity.docid))
         doc = yield d
 
-        loginRE = re.compile(doc["tikkle"]["login"])
+        loginRE =  re.compile(doc["tikkle"]["login"])
         logoutRE = re.compile(doc["tikkle"]["logout"])
-        afkRE = re.compile(doc["tikkle"]["afk"])
+        afkRE =    re.compile(doc["tikkle"]["afk"])
 
         if (loginRE.match(event.content) != None):
             event.source.message("User recognized - Digests!")
@@ -56,17 +56,17 @@ def doStuff(event):
 
 @defer.inlineCallbacks
 def fetchTikkles(event):
-    entries = yield tikkleView()
+    entries = yield tikkleView(key=event.source.identity.docid)
     print "----------------"+str(entries)
     for entry in entries[u'rows']:
-        if (entry[u'key'] == event.source.identity.docid):
-            senderDoc = davenport.openDoc(str(entry[u'value'][0]))
-            senderDoc = yield senderDoc
-            event.source.message(str(senderDoc[u'name']+": "+entry[u'value'][1]))
-            davenport.deleteDoc(str(entry[u'id']), str(entry[u'value'][2]))
+        #if (entry[u'key'] == event.source.identity.docid):
+        senderDoc = davenport.openDoc(str(entry[u'value'][0]))
+        senderDoc = yield senderDoc
+        event.source.message(str(senderDoc[u'name']+": "+entry[u'value'][1]))
+        davenport.deleteDoc(str(entry[u'id']), str(entry[u'value'][2]))
 
 ## Send Messages
-@hook('irc.privmsg',expr='^tikkle tikkle .*')
+@hook('message',expr='^tikkle tikkle .*')
 @defer.inlineCallbacks
 def sendMsg(event):
     # msg = [tikkle, tikkle, <identity name>, <text>]

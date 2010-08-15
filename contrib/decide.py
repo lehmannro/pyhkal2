@@ -8,10 +8,11 @@ def asciicount(text):
 
 DECIDERE = re.compile(r'(".+?"|(?<!").+?(?!"))(?:\s+|$)') 
 
-# @hook('privmsg', expr='!decide')
 @register('decide')
 def handler(event):
-    args = event.content.split(' ', 1)[1]
+    args = event.content
+    if len(args) == 0:
+        return
     # num = asciicount("*!*" + event.source.ident)
     num = asciicount("*!*")
     decide_result = regexdecide(args, num)    

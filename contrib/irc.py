@@ -46,7 +46,7 @@ __settings__ = dict(
     )
 )
 
-class IRCUser(Avatar):
+class IRCUser(Avatar): # TODO: Alle attribute als defer ermöglichen, falls wir ihn noch nicht haben, können wir ihn doch holen! :))
     def __init__(self, **kwargs):
         # Fall 2: Komplettes dict von nick, ident, host, realname, auth
         self.identity = None
@@ -176,9 +176,10 @@ class IRCClient(irc.IRCClient, object):
         dispatch_event("irc.privmsg", event)
 
         if message.startswith(self.prefix):
-            command_event = IRCMessage(self.nickdb[nick], target, message[len(self.prefix)+1:])
+            command = message[len(self.prefix):].split(" ")[0]
+            command_event = IRCMessage(self.nickdb[nick], target, message[len(self.prefix)+len(command)+1:])
             # dispatch_command(origin, command[len(self.prefix):], args)
-            dispatch_command(message[len(self.prefix):].split(" ")[0], command_event)
+            dispatch_command(command, command_event)
 
     def noticed(self, sender, recip, message):
         # the original noticed-function just passes its arguments towards privmsg() - we dont want to do that!

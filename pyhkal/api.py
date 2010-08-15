@@ -12,7 +12,7 @@ api = {}
 def apply(service):
     applied = dict((name, partial(func, service)) for name, func in api.iteritems())
     #XXX raw expose decorator
-    for o in shrink.Avatar, shrink.Event, shrink.Location:
+    for o in shrink.Avatar, shrink.Event, shrink.Location, shrink.MultitonMeta:
         applied[o.__name__] = o
     applied['Identity'] = shrink.IdentityFactory(service)
     applied['davenport'] = service.davenport
