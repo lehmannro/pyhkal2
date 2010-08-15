@@ -72,7 +72,7 @@ def IdentityFactory(service):
         __metaclass__ = MultitonMeta
 
         def __init__(self, docid):
-            self.docid = docid
+            self.docid = docid.encode('latin-1')
             self.avatars = WeakSet()
 
         def link(self, avatar):
