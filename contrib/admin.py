@@ -1,50 +1,64 @@
 # coding: utf-8
 
 from pyhkal import shopping
+from twisted.internet import defer
+
+#TODO: should we check in each command for parameter length?
 
 __version__ = "0.1"
 __requires__ = ["irc"]
 
+@defer.inlineCallbacks
 def isadmin(source):
-    # return True
-    return source.nick == "saldana"
-    # return hasattr(source, identity) and hasattr(source.identity, admin) and source.identity.admin
+    if not source.identity:
+        defer.returnValue(False) # cant be admin, haz no identity
+    else: # check if identity is an admin 
+        d = source.identity.fetch()
+        identity = yield d
+        defer.returnValue(identity.get(u'admin',False))
 
 
-@hook("privmsg", expr="!load\s.+")
+@hook("load")
+@defer.inlineCallbacks
 def load_module(event):
-    if isadmin(event.source):
-        for module in event.content.split(" ")[1:]:
+    admin = yield isadmin(event.source)
+    if admin:
+        for module in event.content:
             try:
                 shopping.buy(module)
             except BaseException as err: # gotta catch 'm all.
                 event.reply("Error: %s" % err)
 
-@hook("privmsg", expr="!reload\s.+")
+@register("reload")
+@defer.inlineCallbacks
 def reload_module(event):
-    if isadmin(event.source):
-        for module in event.content.split(" ")[1:]:
+    admin = yield isadmin(event.source)
+    if admin:
+        for module in event.content:
             shopping.revoke(module)
 
-@hook("privmsg", expr="!unload\s.+")
+@register("unload")
+@defer.inlineCallbacks
 def unload_module(event):
-    if isadmin(event.source):
-        for module in event.content.split(" ")[1:]:
+    admin = yield isadmin(event.source)
+    if admin:
+        for module in event.content:
             shopping.renew(module)
 
-@hook("privmsg", expr="!eval\s.+")
+@register("eval")
+@defer.inlineCallbacks             
 def eval_code(event):
-    if isadmin(event.source):
+    admin = yield isadmin(event.source)
+    if admin:
         try:
-            event.reply(eval(event.content.split(" ", 1)[1]))
+            print event.content
+            event.reply(eval(event.content))
         except Exception as err: # gotta catch 'm all.
             event.reply("Error: %s" % err)
 
-@hook("privmsg", expr="!exec\s.+")
+@register("exec")
+@defer.inlineCallbacks
 def exec_code(event):
-    if isadmin(event.source):
+    admin = yield isadmin(event.source)
+    if admin:
         exec event.content.split(" ", 1)[1] in globals()
-
-@hook("privmsg", expr="!addidentiy")
-def foo(event):
-    pass
