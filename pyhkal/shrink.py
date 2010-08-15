@@ -72,7 +72,7 @@ def IdentityFactory(service):
             if avatar.identity not in (None, self):
                 raise ValueError("double link from %r to %r and %r" %
                         (avatar, self, avatar.identity))
-            service.emit("login", self, avatar)
+            service.dispatch_event("login", self, avatar)
             self.avatars.add(avatar)
             avatar.identity = self
             return self
