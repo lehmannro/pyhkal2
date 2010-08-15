@@ -78,7 +78,7 @@ def extract_id(str):
     return id
 
 
-class Tweet(Event):
+class TweetEvent(Event):
     def __init__(self, target, source, content, id):
         Event.__init__(self, target, source, content)
         self.id = id
@@ -86,10 +86,12 @@ class Tweet(Event):
         return self.target.reply("@%s %s" % (self.source.name, msg))
 
 
-class TwitterLoc(Location):
+class Tweet(Location):
     def __init__(self, id):
+        Location.__init__(self)
         self.id = id
 
+class PublicTweet(Tweet):
     def message(self, msg, params=None):
         return tweet(msg, params)
 
@@ -98,13 +100,29 @@ class TwitterLoc(Location):
                     msg,
                     params={'in_reply_to_status_id':self.id}
                 )
-class Reply(TwitterLoc):
+    def retweet(self):
+        return retweet(self.id)
+
+class PrivateTweet(Tweet):
+    def __init__(self, id, sender):
+        self.id = id
+        self.sender = sender
+    def message(self, msg, params=None):
+        return direct_message(msg, self.sender, params)
+    def reply(self, msg):
+        return self.message(msg)
+
+class Reply(PublicTweet):
     pass
 
-class Friend(TwitterLoc):
+class Friend(PublicTweet):
     pass
 
-class Mention(TwitterLoc):
+class Mention(PublicTweet):
+    pass
+
+
+class Direct(PrivateTweet):
     pass
 
 class User(Avatar):
@@ -122,7 +140,7 @@ class User(Avatar):
             identity.link(self)
 
     def message(self, msg, params=None):
-        return twit().send_direct_message(msg, self.name, params)
+        return direct_message(msg, self.name, params)
     def __eq__(self, obj):
         return isinstance(obj, User) and self.name.lower() == obj.name.lower()
     def __hash__(self):
@@ -136,9 +154,21 @@ def tweet(msg, params=None):
     params = params or {}
     return twit().update(msg,  params=params)
 
-def tweet_direct(msg, user, params=None):
+def retweet(id, delegate=lambda x: 0):
+    return twit().retweet(id, delegate)
+
+def direct_message(msg, user, params=None):
     params = params or {}
     return twit().send_direct_message(msg, screen_name=user, params=params)
+
+def follow(user):
+    return twit().follow(user)
+
+def leave(user):
+    return twit().leave(user)
+
+def block(user):
+    return twit().block(user)
 
 
 
@@ -173,9 +203,9 @@ def reply_delegate(msg):
     yield source.identity_deferred
     target = Reply(id)
     realmsg = msg.title.split(': ',1)[1]
-    e = Tweet(target, source, realmsg, id)
+    e = TweetEvent(target, source, realmsg, id)
     # create another event without @PyHKAL in msg.title
-    e2 = Tweet(target, source, realmsg.split(' ',1)[1], id)
+    e2 = TweetEvent(target, source, realmsg.split(' ',1)[1], id)
     dispatch_event('twitter.reply', e2)
     dispatch_event('twitter.mention', e)
     dispatch_event('twitter.message', e)
@@ -184,7 +214,7 @@ def reply_delegate(msg):
     """ Scan msg or event.content for
     commands and dispatch if found
     """
-    event = Tweet(target, source, realmsg.split(' ',2)[2], id)
+    event = TweetEvent(target, source, realmsg.split(' ',2)[2], id)
     if event.content.strip():
         command = realmsg.split(' ',2)[1]
         dispatch_command(command, event)
@@ -199,7 +229,7 @@ def friend_delegate(msg):
     # wait for identity
     yield source.identity_deferred
     target = Friend(msg.id)
-    e = Tweet(target, source, unescape(msg.text), msg.id)
+    e = TweetEvent(target, source, unescape(msg.text), msg.id)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
 
@@ -214,7 +244,7 @@ def mention_delegate(msg):
     # wait for identity
     yield source.identity_deferred
     target = Mention(msg.id)
-    e = Tweet(target, source, unescape(msg.text), msg.id)
+    e = TweetEvent(target, source, unescape(msg.text), msg.id)
     dispatch_event('twitter.mention', e)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
@@ -225,16 +255,16 @@ def direct_delegate(msg):
     source = User(msg.sender.screen_name)
     # wait for identity
     yield source.identity_deferred
-    target = Mention(msg.id)
+    target = Direct(msg.id, source.name)
     realmsg = unescape(msg.text)
-    e = Tweet(target, source, realmsg, msg.id)
+    e = TweetEvent(target, source, realmsg, msg.id)
     dispatch_event('twitter.direct', e)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
     """ Scan msg or event.content for
     commands and dispatch if found
     """
-    event = Tweet(target, source, realmsg.split(' ',1)[1], id)
+    event = TweetEvent(target, source, realmsg.split(' ',1)[1], id)
     if event.content.strip():
         command = realmsg.split(' ',1)[0]
         dispatch_command(command, event)
