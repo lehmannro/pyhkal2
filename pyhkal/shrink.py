@@ -3,9 +3,9 @@
 Implementation of Identity/Avatar scheme.
 
            +-----------+
-           |   Event   |
-           +-----------+
-           | + reply() |
+           |   Event   | <- IRCMessage
+           +-----------+ <- IRCNotice
+           | + reply() | <- TwitterUpdate
            | - content |
            +-----------+
             |        |
@@ -15,15 +15,15 @@ Implementation of Identity/Avatar scheme.
 +-------------+     +-------------+
 | + message() |     | + message() |
 | - identity  |     +-------------+
-+-------------+
-       #
-       |
-       |
- +-----------+
- |  Identity |
- +-----------+
- | - avatars |
- +-----------+
++-------------+       ^  ^
+ ^      #             |  IRCQuery    
+IRCUser |             IRCChannel
+        |
+  +-----------+
+  |  Identity |
+  +-----------+
+  | - avatars |
+  +-----------+
 
 """
 
