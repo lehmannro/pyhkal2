@@ -36,7 +36,8 @@ class Avatar(object):
     communication channels.
     """
 
-    def __init__(self):
+    def __init__(self, nick):
+        self.nick = nick
         self.identity = None
 
     def message(self, msg):

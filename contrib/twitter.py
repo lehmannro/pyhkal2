@@ -128,7 +128,7 @@ class Direct(PrivateTweet):
 class User(Avatar):
     __metaclass__ = MultitonMeta
     def __init__(self, name):
-        Avatar.__init__(self)
+        Avatar.__init__(self, name)
         self.name = name
         self.identity_deferred = self.identify()
 
