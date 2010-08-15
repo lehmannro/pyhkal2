@@ -49,6 +49,7 @@ __settings__ = dict(
 class IRCUser(Avatar):
     def __init__(self, **kwargs):
         # Fall 2: Komplettes dict von nick, ident, host, realname, auth
+        self.identity = None
         for k,v in kwargs.iteritems():
             setattr(self, k, v)
         assert self.nick != None
@@ -66,8 +67,15 @@ class IRCUser(Avatar):
 class IRCChannel(Location):
     def __init__(self, name):
         self.name = name
-        self.nicklist = []
+        self.nicklist = {}
         self.modes  = {}
+
+    def __contains__(user):
+        if isinstance(user, IRCUser):
+            return IRCUser.nick in self.nicklist
+
+        elif isinstance(user, basestring):
+            return user in self.nicklist
 
     def updateTopic(self, topic, nick, timestamp=None):
         self.topic = topic
@@ -77,9 +85,6 @@ class IRCChannel(Location):
     def updateTopicTS(self, nick, ts):
         self.topictimestamp  = ts
         self.topicsetby = nick
-
-    def updateNames(self, nicklist): #xxx is not being called yet
-        self.nicklist.append(nicklist)
 
     def updateModes(self, modes): #xxx is not being called yet
         self.modes = set(list(modes.replace('+','')))
@@ -134,8 +139,8 @@ class IRCClient(irc.IRCClient, object):
         self.whocalls = {}
         self.whoresults = {}
         self.whoamount = 0
-        self.nickdb = {}
-        self.chandb = {}
+        self.nickdb = {} # { 'ChosenOne' : <IRCUser Object>}, ... } 
+        self.chandb = {} # { '#ich-sucke' : <IRCChannel Object>, ... }
 
     def UpdateNickDB(self, resultlist):
         for user in resultlist:
@@ -167,7 +172,7 @@ class IRCClient(irc.IRCClient, object):
         else:
             target = self.chandb[recip]
         event = IRCMessage(self.nickdb[nick], target, message)
-        dispatch_event("privmsg", event)
+        dispatch_event("message", event)
         dispatch_event("irc.privmsg", event)
 
         if message.startswith(self.prefix):
@@ -300,7 +305,7 @@ class IRCClient(irc.IRCClient, object):
                     else:
                         mode = ""
                         nick = nickname
-                    self.chandb[spacetuple[4]].nicklist.append( {nick: mode } )
+                    self.chandb[spacetuple[4]].nicklist[nick] = mode
             
         if numeric == "366": # end of /names list
             dispatch_event('irc.endofnames', spacetuple[3] )

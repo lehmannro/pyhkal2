@@ -4,6 +4,7 @@ import re
 import json
 from functools import partial, wraps
 from inspect import getargspec, currentframe
+from twisted.internet import defer
 from pyhkal.engine import Pyhkal
 from pyhkal import shrink
 
@@ -15,6 +16,7 @@ def apply(service):
         applied[o.__name__] = o
     applied['Identity'] = shrink.IdentityFactory(service)
     applied['davenport'] = service.davenport
+    applied['defer'] = twisted.internet.defer
     return applied
 
 def expose(item_or_name, item=None):
