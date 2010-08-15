@@ -46,7 +46,7 @@ __settings__ = dict(
     )
 )
 
-class IRCUser(Avatar):
+class IRCUser(Avatar): # TODO: Alle attribute als defer ermöglichen, falls wir ihn noch nicht haben, können wir ihn doch holen! :))
     def __init__(self, **kwargs):
         # Fall 2: Komplettes dict von nick, ident, host, realname, auth
         self.identity = None
