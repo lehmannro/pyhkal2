@@ -28,6 +28,7 @@ IRCUser |             IRCChannel
 """
 
 from _weakrefset import WeakSet
+from weakref import WeakValueDictionary
 
 class Avatar(object):
     """
@@ -45,6 +46,16 @@ class Location(object):
     def message(self, msg):
         raise NotImplementedError
 
+class MultitonMeta(type):
+    def __init__(cls, name, bases, clsdict):
+        cls.instances = WeakValueDictionary()
+    def __call__(cls, unique, *args, **kwargs):
+        if unique in cls.instances:
+            return cls.instances[unique]
+        else:
+            o = type.__call__(cls, unique, *args, **kwargs)
+            cls.instances[unique] = o
+            return o
 
 def IdentityFactory(service):
     class Identity(object):
@@ -58,11 +69,7 @@ def IdentityFactory(service):
         reference's weakness.
         """
 
-        INSTANCES = {}
-        def __new__(cls, docid):
-            if docid not in cls.INSTANCES:
-                cls.INSTANCES[docid] = object.__new__(cls, docid)
-            return cls.INSTANCES[docid]
+        __metaclass__ = MultitonMeta
 
         def __init__(self, docid):
             self.docid = docid
