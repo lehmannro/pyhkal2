@@ -214,8 +214,8 @@ def reply_delegate(msg):
     """ Scan msg or event.content for
     commands and dispatch if found
     """
-    event = TweetEvent(target, source, realmsg.split(' ',2)[2], id)
-    if event.content.strip():
+    if len(realmsg.split(' ')) > 2:
+        event = TweetEvent(target, source, realmsg.split(' ',2)[2], id)
         command = realmsg.split(' ',2)[1]
         dispatch_command(command, event)
 
@@ -264,8 +264,8 @@ def direct_delegate(msg):
     """ Scan msg or event.content for
     commands and dispatch if found
     """
-    event = TweetEvent(target, source, realmsg.split(' ',1)[1], id)
-    if event.content.strip():
+    if len(realmsg.split(' ')) > 1:
+        event = TweetEvent(target, source, realmsg.split(' ',1)[1], id)
         command = realmsg.split(' ',1)[0]
         dispatch_command(command, event)
 
