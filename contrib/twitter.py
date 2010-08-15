@@ -108,6 +108,7 @@ class Mention(TwitterLoc):
     pass
 
 class User(Avatar):
+    __metaclass__ = MultitonMeta
     def __init__(self, name):
         Avatar.__init__(self)
         self.name = name
@@ -119,7 +120,6 @@ class User(Avatar):
         if res['rows']:
             identity = Identity(res['rows'][0]['id'])
             identity.link(self)
-            print '+'*20, 'linked', self.name
 
     def message(self, msg, params=None):
         return twit().send_direct_message(msg, self.name, params)
@@ -147,12 +147,10 @@ def tweet_direct(msg, user, params=None):
 
 
 def atom_collect(collection, delegate, msg):
-    print delegate.func_name, msg.title
     msg_id = extract_id(msg.id)
     collection[msg_id] = msg, delegate
 
 def xml_collect(collection, delegate, msg):
-    print delegate.func_name, msg.text
     collection[msg.id] = msg, delegate
 
 def collect_with(collector):
@@ -168,7 +166,6 @@ def reply_delegate(msg):
     ATOM!!!
     function to handle replies to pyhkals tweet
     """
-    #print msg
     id = extract_id(msg.id)
     name = msg.title.split(':',1)[0]
     source = User(name)
@@ -228,7 +225,14 @@ def mention_delegate(msg):
 @collect_with(xml_collect)
 @defer.inlineCallbacks
 def direct_delegate(msg):
-    pass
+    source = User(msg.sender.screen_name)
+    # wait for identity
+    yield source.identity_deferred
+    target = Mention(msg.id)
+    e = Tweet(target, source, unescape(msg.text), msg.id)
+    dispatch_event('twitter.direct', e)
+    dispatch_event('twitter.message', e)
+    dispatch_event('message', e)
 
 
 @defer.inlineCallbacks
@@ -245,7 +249,6 @@ def refresh_task():
     for task, delegate in tasks:
         params = {'since_id':str(since_id)} \
                  if since_id > 0 else {}
-        print params
         yield task(
                     partial(
                         delegate.collector,
@@ -261,6 +264,13 @@ def refresh_task():
             since_id = int_id
         delegate(msg)
 
+    try:
+        doc = yield davenport.openDoc('twitter')
+    except:
+        doc = {}
+    doc['since_id'] = since_id
+    davenport.saveDoc(doc, 'twitter')
+
 #    return twit().replies(lambda x: reply_collect(collection, x), params={'since_id':str(since_id)}).addBoth(
 #                lambda x: twit().friends(lambda x: friend_collect(collection,x), params={'since_id':str(since_id)}).addBoth(lambda x: refresh_done(collection))
 #            )
@@ -272,7 +282,15 @@ refresher = LoopingCall(refresh_task)
 
 # Initialization
 @hook('startup')
+@defer.inlineCallbacks
 def startup():
+    global since_id
+    try:
+        doc = yield davenport.openDoc('twitter')
+        since_id = doc['since_id']
+    except:
+        pass
+
     refresher.start(REFRESHDELAY)
 
 
