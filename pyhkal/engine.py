@@ -24,6 +24,7 @@ class Pyhkal(service.Service):
     def startService(self):
         #XXX reloadable
         db = self.screwdriver['database']
+        self.debug = remember('debug', False)
         self.davenport = Davenport(db['host'], 'pyhkal', db['username'],
                 db['password'], db['port'])
         self.listeners = collections.defaultdict(WeakSet)
@@ -40,6 +41,8 @@ class Pyhkal(service.Service):
         self.listeners[name.lower()].add(listener)
 
     def dispatch_event(self, name, *args):
+        if self.debug:
+            print "[%s] %r" % (name, args)
         for dispatcher in self.listeners[name.lower()]:
             dispatcher(*args)
 
