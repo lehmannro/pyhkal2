@@ -9,6 +9,7 @@ Actually, this module's task is /only/ to bind avatars to identities
 from twisted.internet import defer
 __version__ = "0.1"
 __requires__ = ["irc"]
+__author__ = "freddyb"
 
 getAuths = chaos("getAuths","""
     if (doc.qauth) {
