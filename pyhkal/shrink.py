@@ -3,9 +3,9 @@
 Implementation of Identity/Avatar scheme.
 
            +-----------+
-           |   Event   |
-           +-----------+
-           | + reply() |
+           |   Event   | <- IRCMessage
+           +-----------+ <- IRCNotice
+           | + reply() | <- TwitterUpdate
            | - content |
            +-----------+
             |        |
@@ -15,15 +15,15 @@ Implementation of Identity/Avatar scheme.
 +-------------+     +-------------+
 | + message() |     | + message() |
 | - identity  |     +-------------+
-+-------------+
-       #
-       |
-       |
- +-----------+
- |  Identity |
- +-----------+
- | - avatars |
- +-----------+
++-------------+       ^  ^
+ ^      #             |  IRCQuery    
+IRCUser |             IRCChannel
+        |
+  +-----------+
+  |  Identity |
+  +-----------+
+  | - avatars |
+  +-----------+
 
 """
 
@@ -72,6 +72,7 @@ def IdentityFactory(service):
             if avatar.identity not in (None, self):
                 raise ValueError("double link from %r to %r and %r" %
                         (avatar, self, avatar.identity))
+            service.dispatch_event("login", self, avatar)
             self.avatars.add(avatar)
             avatar.identity = self
             return self

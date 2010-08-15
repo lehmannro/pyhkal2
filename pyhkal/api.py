@@ -1,10 +1,11 @@
 # encoding: utf-8
 
-from functools import partial
-from inspect import getargspec, currentframe
 import re
-from pyhkal import shrink
+import json
+from functools import partial, wraps
+from inspect import getargspec, currentframe
 from pyhkal.engine import Pyhkal
+from pyhkal import shrink
 
 api = {}
 def apply(service):
@@ -36,12 +37,13 @@ def hook(service, event, expr=None):
 
     def deco(func):
         if expr:
+            @wraps(func)
             def new_func(event):
                 if comp_re.search(event.content):
                     return func(event)
         else:
             new_func = func
-        
+
         service.add_listener(event, new_func)
         return new_func
     return deco
@@ -63,10 +65,9 @@ expose(Pyhkal.twist)
 def chaos(service, name, script):
     mod = currentframe().f_back.f_globals['__mod__']
     service.davenport.order(mod, name, script)
-    def call(cb=None, key=None, **kwargs):
-        if key is not None:
-            kwargs['startkey'] = key
-            kwargs['endkey'] = key + u'\ufff0'
+    def call(cb=None, **kwargs):
+        if 'key' in kwargs:
+            kwargs['key'] = json.dumps(kwargs['key'])
         d = service.davenport.openView(mod, name, **kwargs)
         if cb is not None:
             d.addCallback(cb)
