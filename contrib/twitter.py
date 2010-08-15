@@ -103,15 +103,16 @@ class User(Avatar):
     def __init__(self, name):
         Avatar.__init__(self)
         self.name = name
-        self.identify()
+        self.identity_deferred = self.identify()
 
     @defer.inlineCallbacks
     def identify(self):
         res = yield twitterIdentityView(key=self.name)
         if res['rows']:
-            print res
             identity = Identity(res['rows'][0]['id'])
             identity.link(self)
+            print '+'*20, 'linked', self.name
+
     def message(self, msg, params=None):
         return twit().send_direct_message(msg, self.name, params)
     def __eq__(self, obj):
@@ -132,7 +133,7 @@ def tweet_direct(msg, user, params=None):
     return twit().send_direct_message(msg, user=user, params=params)
 
 
-
+@defer.inlineCallbacks
 def reply_delegate(msg):
     """
     ATOM!!!
@@ -142,42 +143,52 @@ def reply_delegate(msg):
     id = extract_id(msg.id)
     name = msg.title.split(':',1)[0]
     source = User(name)
+    # wait for identity
+    yield source.identity_deferred
     target = Reply(id)
     realmsg = msg.title.split(':',1)[1]
     e = Tweet(target, source, realmsg, id)
     # create another event without @PyHKAL in msg.title
-    e2 = Tweet(target, source, realmsg.split(' ',2)[2], id)
+    e2 = Tweet(target, source, realmsg.split(' ',1)[1], id)
     dispatch_event('twitter.reply', e2)
     dispatch_event('twitter.mention', e)
     dispatch_event('twitter.message', e)
+    print 'dispatching message', e2.content
     dispatch_event('message', e2)
 
-    def command_check(event):
+    def command_check():
         """ Scan msg or event.content for
         commands and dispatch if found
         """
+        event = Tweet(target, source, realmsg.split(' ',2)[2], id)
         if event.content.strip():
-            command = event.content.split(' ')[0]
+            command = realmsg.split(' ',2)[1]
             dispatch_command(command, event)
 
-    command_check(e2)
+    command_check()
 
+@defer.inlineCallbacks
 def friend_delegate(msg):
     """
     function to handle our friends's tweets
     """
     source = User(msg.user.screen_name)
+    # wait for identity
+    yield source.identity_deferred
     target = Friend(msg.id)
     e = Tweet(target, source, unescape(msg.text), msg.id)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
 
+@defer.inlineCallbacks
 def mention_delegate(msg):
     """
     function to handle tweets containing
     @PyHKAL (not necessarily as the first word)
     """
     source = User(msg.user.screen_name)
+    # wait for identity
+    yield source.identity_deferred
     target = Mention(msg.id)
     e = Tweet(target, source, unescape(msg.text), msg.id)
     dispatch_event('twitter.mention', e)
