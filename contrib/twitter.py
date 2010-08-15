@@ -5,9 +5,17 @@ from twittytwister.twitter import Twitter
 from oauth import oauth
 from functools import partial
 from twisted.internet.task import LoopingCall
+from collections import defaultdict
 
 
 REFRESHDELAY = 60
+
+"""
+dict of since_id values for every task
+to be executed repeatedly
+this could be reworked to a single value
+see refresh_task
+"""
 since_id = -1
 
 
@@ -130,9 +138,30 @@ def tweet(msg, params=None):
 
 def tweet_direct(msg, user, params=None):
     params = params or {}
-    return twit().send_direct_message(msg, user=user, params=params)
+    return twit().send_direct_message(msg, screen_name=user, params=params)
 
 
+
+
+
+
+
+def atom_collect(collection, delegate, msg):
+    print delegate.func_name, msg.title
+    msg_id = extract_id(msg.id)
+    collection[msg_id] = msg, delegate
+
+def xml_collect(collection, delegate, msg):
+    print delegate.func_name, msg.text
+    collection[msg.id] = msg, delegate
+
+def collect_with(collector):
+    def dec(func):
+        func.collector = collector
+        return func
+    return dec
+
+@collect_with(atom_collect)
 @defer.inlineCallbacks
 def reply_delegate(msg):
     """
@@ -166,6 +195,7 @@ def reply_delegate(msg):
 
     command_check()
 
+@collect_with(xml_collect)
 @defer.inlineCallbacks
 def friend_delegate(msg):
     """
@@ -179,6 +209,7 @@ def friend_delegate(msg):
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
 
+@collect_with(xml_collect)
 @defer.inlineCallbacks
 def mention_delegate(msg):
     """
@@ -194,36 +225,35 @@ def mention_delegate(msg):
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
 
+@collect_with(xml_collect)
+@defer.inlineCallbacks
+def direct_delegate(msg):
+    pass
 
-# TODO change collect funtions to xml_collect 
-# and atom_collect
-def reply_collect(collection, msg):
-    msg_id = extract_id(msg.id)
-    collection[msg_id] = msg, reply_delegate
-
-def friend_collect(collection, msg):
-    collection[msg.id] = msg, friend_delegate
-
-def mention_collect(collection, msg):
-    collection[msg.id] = msg, mention_delegate
 
 @defer.inlineCallbacks
 def refresh_task():
     global since_id
     collection = {}
-    params = {'since_id':str(since_id)}
-    try:
-        yield twit().friends(partial(friend_collect, collection), params=params)
-    except:
-        pass
-    try:
-        yield twit().mentions(partial(mention_collect, collection), params=params)
-    except:
-        pass
-    try:
-        yield twit().replies(partial(reply_collect, collection), params=params)
-    except:
-        pass
+    tw = twit()
+    tasks = [
+                (tw.friends, friend_delegate),
+                (tw.mentions, mention_delegate),
+                (tw.replies, reply_delegate),
+                (tw.direct_messages, direct_delegate),
+            ]
+    for task, delegate in tasks:
+        params = {'since_id':str(since_id)} \
+                 if since_id > 0 else {}
+        print params
+        yield task(
+                    partial(
+                        delegate.collector,
+                        collection,
+                        delegate
+                    ),
+                    params=params
+                  )
 
     for msg_id, (msg, delegate) in collection.iteritems():
         int_id = int(msg_id)
