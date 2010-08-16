@@ -52,7 +52,7 @@ class IRCUser(Avatar): # TODO: Alle attribute als defer ermöglichen, falls wir 
         # Fall 2: Komplettes dict von nick, ident, host, realname, auth
         for k,v in kwargs.iteritems():
             setattr(self, k, v)
-        Avatar.__init__(self.nick)
+        Avatar.__init__(self, self.nick)
 
     @staticmethod
     def fromhostmask(hostmask): # Fall 1: IRCUser(hostmask="nick!ident@host") und er hat schonmal 3 Werte
@@ -70,11 +70,12 @@ class IRCChannel(Location):
         self.nicklist = {}
         self.modes  = {}
 
-    def __contains__(user):
+    def __contains__(self, user):
         if isinstance(user, IRCUser):
             return IRCUser.nick in self.nicklist
 
         elif isinstance(user, basestring):
+            print "teste ob %s in %s" % (user, self.nicklist)
             return user in self.nicklist
 
     def updateTopic(self, topic, nick, timestamp=None):
@@ -302,16 +303,18 @@ class IRCClient(irc.IRCClient, object):
 
         if numeric == '353': # name-answer
             ":clanserver4u1.de.quakenet.org 353 ChosenOne = #chan :@alice +bob charlie"
-            prefixes = self.supported.getFeature("PREFIX").iterkeys()
+            features = self.supported.getFeature("PREFIX")
+            prefixes = [k[0] for k in features.values()]
             for nickname in colontuple[2].split(' '): # every nickname...
                 for p in prefixes: # remove prefix if set
                     if (p == nickname[0]):
                         mode = nickname[0]
                         nick = nickname[1:]
+                        break
                     else:
                         mode = ""
                         nick = nickname
-                    self.chandb[spacetuple[4]].nicklist[nick] = mode
+                self.chandb[spacetuple[4]].nicklist[nick] = mode
             
         if numeric == "366": # end of /names list
             dispatch_event('irc.endofnames', spacetuple[3] )
