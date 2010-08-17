@@ -11,7 +11,7 @@ from twisted.words.protocols import irc
 from itertools import cycle
 from types import MethodType
 from time import time # for channel timestamp
-
+import re # re.compile for stripping color-codes
 
 DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
@@ -147,6 +147,7 @@ class IRCClient(irc.IRCClient, object):
         self.whoamount = 0
         self.nickdb = {} # { 'ChosenOne' : <IRCUser Object>}, ... } 
         self.chandb = {} # { '#ich-sucke' : <IRCChannel Object>, ... }
+        self.colorregex = re.compile("\x1f|\x02|\x12|\x0f|\x16|\x03(?:\d{1,2}(?:,\d{1,2})?)?", re.UNICODE)
 
     def UpdateNickDB(self, resultlist):
         for user in resultlist:
@@ -171,6 +172,7 @@ class IRCClient(irc.IRCClient, object):
             self.join(channel)
 
     def privmsg(self, sender, recip, message): # used when RECEIVING a message
+        message = self.colorregex.sub('', message) # replace color codes etc.
         irc.IRCClient.privmsg(self, sender, recip, message)
         nick = sender.split("!",1)[0]
         if recip == self.nickname:
