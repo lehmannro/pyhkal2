@@ -378,7 +378,7 @@ class IRCClient(irc.IRCClient, object):
 class IRCClientFactory(protocol.ReconnectingClientFactory):
     protocol = IRCClient
     initialDelay = 10.0
-    factor = 1.6180339887498948 # Phi as math.e is too large
+    factor = 2.5 # Phi is not enough, math.e is too much.
     maxDelay = 60 * 5
     def buildProtocol(self, addr):
         p = self.protocol()
