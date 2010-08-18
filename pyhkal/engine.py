@@ -47,12 +47,14 @@ class Pyhkal(service.Service):
             dispatcher(*args)
 
     def add_command(self, command, listener):
+        command = command.lower()
         #+ support subcommands
         if command in self.commands:
             raise SystemError
         self.commands[command] = listener
 
     def dispatch_command(self, command, event):
+        command = command.lower()
         #+ subcommand dispatch
         #+ check for number of arguments
         if command in self.commands:
