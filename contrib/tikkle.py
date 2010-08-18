@@ -57,7 +57,7 @@ def fetchTikkles(event):
 ## Send Messages
 @hook('message',expr='^tikkle tikkle .*')
 @defer.inlineCallbacks
-def sendMsg(event):
+def sendMsg(event,r):
     # msg = [tikkle, tikkle, <identity name>, <text>]
     msg = event.content.split(' ')
     if ((msg[1] == "tikkle") and (hasIdentity(event))):
