@@ -64,6 +64,18 @@ class IRCUser(Avatar): # TODO: Alle attribute als defer ermöglichen, falls wir 
     def message(self, text):
         dispatch_event("irc.sendnotice", self.nick, text)
 
+    def __str__(self):
+        r=''
+        if self.nick and self.ident and self.host:
+            r += "%s!%s@%s" % (self.nick, self.ident, self.host)
+        if hasattr(self, 'realname'):
+            r += " (%s)" % self.realname
+        if hasattr(self, 'auth'):
+            r += " authed as %s" % self.auth
+        if r == '':
+            r= repr(self)
+        return r
+
 class IRCChannel(Location):
     def __init__(self, name):
         self.name = name
@@ -72,10 +84,8 @@ class IRCChannel(Location):
 
     def __contains__(self, user):
         if isinstance(user, IRCUser):
-            return IRCUser.nick in self.nicklist
-
+            return user.nick in self.nicklist
         elif isinstance(user, basestring):
-            print "teste ob %s in %s" % (user, self.nicklist)
             return user in self.nicklist
 
     def updateTopic(self, topic, nick, timestamp=None):
@@ -168,6 +178,7 @@ class IRCClient(irc.IRCClient, object):
     def kickedFrom(self, channel, kicker, message):
         irc.IRCClient.kickedFrom(self, channel, kicker, message)
         dispatch_event("irc.kicked", channel, kicker, message)
+        del(self.chandb[channel]) # remove channel from internal db
         if channel in self.channels: # autorejoin
             self.join(channel)
 
@@ -182,7 +193,6 @@ class IRCClient(irc.IRCClient, object):
         event = IRCMessage(self.nickdb[nick], target, message)
         dispatch_event("message", event)
         dispatch_event("irc.privmsg", event)
-
         if message.startswith(self.prefix):
             command = message[len(self.prefix):].split(" ")[0]
             command_event = IRCMessage(self.nickdb[nick], target, message[len(self.prefix)+len(command)+1:])
@@ -237,6 +247,11 @@ class IRCClient(irc.IRCClient, object):
 
     def userRenamed(self, oldname, newname):
         self.nickdb[newname] = self.nickdb.pop(oldname)
+        for channel in self.chandb:
+            if oldname in self.chandb[channel]:
+                self.chandb[channel].nicklist[newname] = self.chandb[channel].nicklist[oldname]
+                del(self.chandb[channel].nicklist[oldname])
+
 
     def joined(self, channel):
         self.chandb[channel] = IRCChannel(channel)
@@ -251,13 +266,47 @@ class IRCClient(irc.IRCClient, object):
         #params = params[:-1] + params[-1].replace(':','')
         irc.IRCClient.irc_JOIN(self, prefix, params)
         nick = prefix.split('!', 1)[0]
+        channel = params[0]
         if not nick in self.nickdb:
             self.nickdb[nick] = IRCUser.fromhostmask(prefix)
+        self.chandb[channel].nicklist[nick] = ''
+        if nick != self.nickname:
+            d = self.getInfo(nick)
+            d.addCallback(self.UpdateNickDB)
+        """ ^-- this gives us 
+    2010-08-23 11:23:41+0200 [IRCClient,client] Sending WHO foobert, n%nafuhr,2
+    2010-08-23 11:23:41+0200 [IRCClient,client] Unhandled error in Deferred:
+    2010-08-23 11:23:41+0200 [IRCClient,client] Unhandled Error
+	Traceback (most recent call last):
+	Failure: exceptions.ValueError: 
+
+        """
+
+    def irc_PART(self, prefix, params):
+        irc.IRCClient.irc_PART(self, prefix, params)
+        nick = prefix.split('!', 1)[0]
+        if len(params) > 1:
+            channel, partmsg = params
+        else:
+            channel = params[0]
+        del(self.chandb[channel].nicklist[nick])
+        if self.comchans(nick) == 0:
+            #print "Deleted %s from NickDB, not sharing any channels" % nick
+            del(self.nickdb[nick]) 
 
     def irc_QUIT(self, prefix, params):    	    
         irc.IRCClient.irc_QUIT(self, prefix, params)
         nick = prefix.split('!', 1)[0]
+        for channel in self.chandb:
+            if nick in self.chandb[channel]:
+                del(self.chandb[channel].nicklist[nick])
         del(self.nickdb[nick])
+
+    def userKicked(self, kickee, channel, kicker, message):
+        del(self.chandb[channel].nicklist[kickee])
+        if self.comchans(kickee) == 0:
+            #print "Deleted %s from NickDB, not sharing any channels" % nick
+            del(self.nickdb[kickee])         
 
     def sendLine(self, line):
         if isinstance(line, unicode):
@@ -322,24 +371,29 @@ class IRCClient(irc.IRCClient, object):
             dispatch_event('irc.endofnames', spacetuple[3] )
     
         if numeric == "354": # triggers on custom /who like the one in getInfo()
-            """ :clanserver4u2.de.quakenet.org 354 pyhkal_ #pyhkal ~ChosenOne ChosenOne.users.quakenet.org ChosenOne H@+x ChosenOne :lost in thoughts
-            :clanserver4u2.de.quakenet.org 354 pyhkal_ #pyhkal TheQBot CServe.quakenet.org Q H*@d Q :The Q Bot
-            :clanserver4u1.de.quakenet.org 354 ChosenOne 666 npx noopman.users.quakenet.org NPX G+x noopman :NPENIX
-                                                 ^--me    ^--ID ^-ident ^--host              ^-nick^--flags^--auth ^--realname
-                 in case of missing ID:                ident---v
-                :wineasy2.se.quakenet.org 354 wewetrasdgfdg PyHKAL2 server3.raumopol.de PyHKAL2 H 0 :PyHKAL
-
             """
-            if spacetuple[3].isdigit() or spacetuple[3][0] == '#':
+            :clanserver4u2.de.quakenet.org 354 pyhkal_ 2 ~ChosenOne dslb-084-060-043-128.pools.arcor-ip.net foobert H 0 :lost in thoughts
+            :prefix, rawnum, me, ID, ident, host, nick, flags, auth, :realname
+
+            :clanserver4u2.de.quakenet.org 354 pyhkal_ 1 #pyhkal ~ChosenOne ChosenOne.users.quakenet.org ChosenOne H@x ChosenOne :lost in thoughts
+            :prefix, rawnum, me, ID, channel, ident, host, nick, flags, auth, :realname
+            """
+            #print ' '.join(spacetuple)
+            if spacetuple[4][0] == '#': # channel
+                resultdict = dict(zip( ('ident', 'host', 'nick', 'flags', 'auth', 'realname'), spacetuple[5:10] + [colontuple[2],] ))
+            elif spacetuple[3].isdigit(): # single user
                 resultdict = dict(zip( ('ident', 'host', 'nick', 'flags', 'auth', 'realname'), spacetuple[4:9] + [colontuple[2],] ))
-                resultdict['away'] = ('G' in resultdict['flags']) 
-                resultdict['auth'] = None if (resultdict['auth'] == "0") else resultdict['auth']
-                ID = spacetuple[3] #this might be our numeric ID or the channel matching our rquest
-                #print "<<got authnickidentfooline>", repr(resultdict), ID
-                if ID in self.whoresults: # WHO results. how funny would "whore-sluts" be,?! :P
-                    self.whoresults[ID].append(resultdict)
-                else:
-                    self.whoresults[ID] = [resultdict]
+            else:
+                return # we will abort, because our answer appears to be unrequested?!?
+            resultdict['away'] = ('G' in resultdict['flags']) 
+            resultdict['auth'] = None if (resultdict['auth'] == "0") else resultdict['auth']
+            ID = int(spacetuple[3]) #this might be our numeric ID or the channel matching our rquest
+            #print "<<got authnickidentfooline>", repr(resultdict), ID
+            if ID in self.whoresults: # WHO results. how funny would "whore-sluts" be,?! :P
+                self.whoresults[ID].append(resultdict)
+            else:
+                self.whoresults[ID] = [resultdict]
+
                 
         if numeric == "315": # end of /who list
             ":clanserver4u1.de.quakenet.org 315 ChosenOne #pyhkal, :End of /WHO list."
@@ -353,7 +407,7 @@ class IRCClient(irc.IRCClient, object):
                     if len(self.whoresults[ID]) > 0:
                         d.callback(self.whoresults[ID])
                     else:
-                        d.errback(ValueError())
+                        d.errback(ValueError("WHO-Request returned an empty result-set"))
             self.whocalls = {}
             self.whoresults = {}
 
@@ -365,16 +419,22 @@ class IRCClient(irc.IRCClient, object):
         whoresults: id -> (resultline,...)
         """
         d = defer.Deferred()
+        self.whocalls[ID] = (d, target)
+        self.whoresults[ID] = []
         if target[0] == '#':
-            self.whocalls[target] = (d, target)
-            self.whoresults[target] = []
-            dispatch_event("irc.send", "WHO %s n%%cnafuhr" % target)
+            dispatch_event("irc.send", "WHO %s n%%cnafuhrt,%s" % (target, ID))
         else: # nickname
-            self.whocalls[ID] = (d, target)
-            self.whoresults[ID] = []
-            dispatch_event("irc.send", "WHO %s, n%%nafuhr,%s" % (target, ID))
+            dispatch_event("irc.send", "WHO %s, n%%nafuhrt,%s" % (target, ID))
         self.whoamount += 1
         return d
+
+    def comchans(self, nick):
+        """ Determine amount of common channels with nick """
+        comchannels = 0
+        for chan in self.chandb:
+            if nick in chan:
+                comchannels += 1
+        return comchannels
      
 
 class IRCClientFactory(protocol.ReconnectingClientFactory):

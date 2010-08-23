@@ -25,7 +25,9 @@ def findIdentities(nickdb):
     #key in nickdb =  nickname
     # value für nicckdb[nickname] = IRCUser{ nick: .., auth: ..., realname: ... }
     for nickname in nickdb:
-        if hasattr(nickdb[nickname], 'auth'):
+        if hasattr(nickdb[nickname], 'auth') and nickdb[nickname].auth:
+            if hasattr(nickdb[nickname], 'identity') and isinstance(nickdb[nickname], Identity):
+                continue
             qauth = nickdb[nickname].auth
             if (qauth != None):
                 print "calling getAuths view, asking for nick %s auth %s" % (nickname, repr(qauth))
