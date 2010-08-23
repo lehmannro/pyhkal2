@@ -28,30 +28,30 @@ def karma_edit(event, wort, delta):
         if (time.time() - entry[u'updated_at']) > karmaspam:
             entry[u'value'] += delta
             entry[u'updated_at'] = time.time()      # printable wirds durch time.ctime(updated_at)
-            event.reply("%s hat nun einen karmawert von %s" % (wort, entry[u'value']))
             #print "nun speicher ich das neue doch", entry
             yield davenport.saveDoc(entry) # entry in DB stecken
+            event.reply("%s hat nun einen karmawert von %s" % (wort, entry[u'value']))
         else:
             rest = seconds2string(karmaspam - (time.time() - entry[u'updated_at']))
             event.reply("%s ist noch %s blockiert" % (wort, rest))
     else: # neuen adden
         #print "wir adden karma neu"
         entry = {u'doctype': 'karma', u'name': wort, u'value': delta, u'updated_at': time.time(), u'created_at': time.time() }
-        event.reply("%s hat nun einen karmawert von %s" % (wort, delta))  
         yield davenport.saveDoc(entry) # entry in db stecken
+        event.reply("%s hat nun einen karmawert von %s" % (wort, delta))
 
-@hook("message", r"\b(\w+)\+\+")
+@hook("message", r"(\S\S+\+\+)(?:\s|$)") #r"\b(\w+)\+\+"
 def karma_add(event, wort):
-    return karma_edit(event, wort, +1)
+    return karma_edit(event, wort[:-2], +1)
 
-@hook("message", r"\b(\w+)--")
+@hook("message", r"([\S]\S+--)(?:\s|$)") # r"\b(\w+)--"
 def karma_del(event, wort):
-    return karma_edit(event, wort, -1)
+    return karma_edit(event, wort[:-2], -1)
         
-@hook("message", r"\b(\w+)==")
+@hook("message", r"(\S\S+==)(?:\s|$)") # r"\b(\w+)=="
 @defer.inlineCallbacks
 def karma_say(event, wort):
-    wort = wort.lower()
+    wort = wort.lower()[:-2]
     result = yield getKarma(key=wort)
     if result[u'rows']: # karma erhöhen
         value = result[u'rows'][0][u'value']
@@ -61,4 +61,6 @@ def karma_say(event, wort):
 
 def seconds2string(sec):
     return str(datetime.timedelta(seconds=sec))[2:]
-
+#(\S\S+\+\+)(?:\s|$)
+#([\S]\S+--)(?:\s|$)
+#(\S\S+==)(?:\s|$)
