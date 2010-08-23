@@ -273,14 +273,6 @@ class IRCClient(irc.IRCClient, object):
         if nick != self.nickname:
             d = self.getInfo(nick)
             d.addCallback(self.UpdateNickDB)
-        """ ^-- this gives us 
-    2010-08-23 11:23:41+0200 [IRCClient,client] Sending WHO foobert, n%nafuhr,2
-    2010-08-23 11:23:41+0200 [IRCClient,client] Unhandled error in Deferred:
-    2010-08-23 11:23:41+0200 [IRCClient,client] Unhandled Error
-	Traceback (most recent call last):
-	Failure: exceptions.ValueError: 
-
-        """
 
     def irc_PART(self, prefix, params):
         irc.IRCClient.irc_PART(self, prefix, params)
