@@ -4,19 +4,18 @@
 
 """
 
-from twisted.internet import defer
-import time
-from math import floor
+import time #XXX consult event.time instead of time.time
 
-__version__ = "0.1a"
-__requires__ = ["irc"]
+__version__ = "0.2"
 
-@hook("message",expr="^(\*cube)?.*")
-def startCubeTimer(event,r):
-    if not hasattr(event.source, "cube") or event.source.cube == None and event.content.split()[0] == "*cube":
+@hook("message", expr=r'^*cube\b')
+def startCubeTimer(event, r):
+    if not hasattr(event.source, 'cube'):
         event.source.cube = time.time()
-    else:
-        if hasattr(event.source, "cube") and not event.source.cube == None:
-            needed = floor((time.time() - event.source.cube)*100)/100
-            event.reply("%s: %.2f" % (event.source.nick, needed))
-            event.source.cube = None
+
+@hook("message")
+def stopCubeTimer(event):
+    if hasattr(event.source, 'cube'):
+        timed = time.time() - event.source.cube
+        event.reply("%s: %.2g" % (event.source.nick, needed))
+        del event.source.cube
