@@ -111,12 +111,7 @@ class IRCChannel(Location):
         dispatch_event("irc.sendmessage", self.name, msg)
 
 class IRCMessage(Event):
-    def __init__(self, avatar, location, text):
-        self.content = text
-        self.source = avatar
-        self.target = location
-    def reply(self, msg):
-        self.target.message(msg)
+    """Message transmitted via IRC protocol."""
 
 class IRCQuery(Location):
     def __init__(self, user):
