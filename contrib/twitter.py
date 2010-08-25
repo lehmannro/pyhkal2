@@ -216,9 +216,9 @@ def reply_delegate(msg):
     yield source.identity_deferred
     target = Reply(id)
     realmsg = msg.title.split(': ',1)[1]
-    e = TweetEvent(target, source, realmsg, id, atom_date(msg))
+    e = TweetEvent(target=target, source=source, content=realmsg, id=id, timestamp=atom_date(msg))
     # create another event without @PyHKAL in msg.title
-    e2 = TweetEvent(target, source, realmsg.split(' ',1)[1], id, atom_date(msg))
+    e2 = TweetEvent(target=target, source=source, content=realmsg.split(' ',1)[1], id=id, timestamp=atom_date(msg))
     dispatch_event('twitter.reply', e2)
     dispatch_event('twitter.mention', e)
     dispatch_event('twitter.message', e)
@@ -228,7 +228,7 @@ def reply_delegate(msg):
     commands and dispatch if found
     """
     if len(realmsg.split(' ')) > 2:
-        event = TweetEvent(target, source, realmsg.split(' ',2)[2], id, atom_date(msg))
+        event = TweetEvent(target=target, source=source, content=realmsg.split(' ',2)[2], id=id, timestamp=atom_date(msg))
         command = realmsg.split(' ',2)[1]
         dispatch_command(command, event)
 
@@ -242,7 +242,7 @@ def friend_delegate(msg):
     # wait for identity
     yield source.identity_deferred
     target = Friend(msg.id)
-    e = TweetEvent(target, source, unescape(msg.text), msg.id, xml_date(msg))
+    e = TweetEvent(target=target, source=source, content=unescape(msg.text), id=msg.id, timestamp=xml_date(msg))
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
 
@@ -257,7 +257,7 @@ def mention_delegate(msg):
     # wait for identity
     yield source.identity_deferred
     target = Mention(msg.id)
-    e = TweetEvent(target, source, unescape(msg.text), msg.id, xml_date(msg))
+    e = TweetEvent(target=target, source=source, content=unescape(msg.text), id=msg.id, timestamp=xml_date(msg))
     dispatch_event('twitter.mention', e)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
@@ -270,7 +270,7 @@ def direct_delegate(msg):
     yield source.identity_deferred
     target = Direct(msg.id, source.name)
     realmsg = unescape(msg.text)
-    e = TweetEvent(target, source, realmsg, msg.id, xml_date(msg))
+    e = TweetEvent(target=target, source=source, content=realmsg, id=msg.id, timestamp=xml_date(msg))
     dispatch_event('twitter.direct', e)
     dispatch_event('twitter.message', e)
     dispatch_event('message', e)
@@ -278,7 +278,7 @@ def direct_delegate(msg):
     commands and dispatch if found
     """
     if len(realmsg.split(' ')) > 1:
-        event = TweetEvent(target, source, realmsg.split(' ',1)[1], id, xml_date(msg))
+        event = TweetEvent(target=target, source=source, content=realmsg.split(' ',1)[1], id=id, timestamp=xml_date(msg))
         command = realmsg.split(' ',1)[0]
         dispatch_command(command, event)
 

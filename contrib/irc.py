@@ -185,12 +185,12 @@ class IRCClient(irc.IRCClient, object):
             target = IRCQuery(self.nickdb[nick])
         else:
             target = self.chandb[recip]
-        event = IRCMessage(self.nickdb[nick], target, message)
+        event = IRCMessage(target=target, source=self.nickdb[nick], content=message)
         dispatch_event("message", event)
         dispatch_event("irc.privmsg", event)
         if message.startswith(self.prefix):
             command = message[len(self.prefix):].split(" ")[0]
-            command_event = IRCMessage(self.nickdb[nick], target, message[len(self.prefix)+len(command)+1:])
+            command_event = IRCMessage(target=target, source=self.nickdb[nick], content=message[len(self.prefix)+len(command)+1:])
             # dispatch_command(origin, command[len(self.prefix):], args)
             dispatch_command(command, command_event)
 
