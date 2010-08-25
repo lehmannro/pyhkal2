@@ -317,6 +317,15 @@ class IRCClient(irc.IRCClient, object):
         spacetuple = data.split(' ')
         colontuple = data.split(':')
         numeric = spacetuple[1]
+        if '!' in spacetuple[0] and '@' in spacetuple[0]:
+            prefix = spacetuple[0][1:]
+            nick = prefix.split('!', 1)[0]
+            if not nick in self.nickdb:
+                # this might not even be a problem, if you imagine a private message from someone with no common channels
+                # however some KeyErrors *have* occured, so we should monitor these log-messages in future ;)
+                print "## NickDB ##: %s appeared and wasnt in nickdb; introduced via '%s'" % (nick, data)
+                self.nickdb[nick] = IRCUser.fromhostmask(prefix)
+
         if numeric == "001":
             ":clanserver4u1.de.quakenet.org 001 PyHKAL :Welcome to the QuakeNet IRC Network, PyHKAL3"
             self.nickname = spacetuple[2]
