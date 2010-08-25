@@ -2,13 +2,14 @@
 """
 Implementation of Identity/Avatar scheme.
 
-           +-----------+
-           |   Event   | <- IRCMessage
-           +-----------+ <- IRCNotice
-           | + reply() | <- TwitterUpdate
-           | - content |
-           +-----------+
-            |        |
+         +-------------+
+         |    Event    | <- IRCMessage
+         +-------------+ <- IRCNotice
+         | + reply()   | <- TwitterUpdate
+         | - content   |
+         | - timestamp |
+         +-------------+
+     source |        | target
             |        |
 +-------------+     +-------------+
 |    Avatar   |     |  Location   |
@@ -16,7 +17,7 @@ Implementation of Identity/Avatar scheme.
 | + message() |     | + message() |
 | - identity  |     +-------------+
 +-------------+       ^  ^
- ^      #             |  IRCQuery    
+ ^      #             |  IRCQuery
 IRCUser |             IRCChannel
         |
   +-----------+
