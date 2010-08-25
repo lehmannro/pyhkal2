@@ -4,19 +4,18 @@
 
 """
 
-import datetime #XXX consult event.time instead of datetime.time
-
-__version__ = "0.2"
+__version__ = "0.3"
 
 @hook("message", expr=r'^\*cube\b')
 def startCubeTimer(event, r):
     if not hasattr(event.source, 'cube'):
-        event.source.cube = datetime.datetime.now()
+        # source will persist through events
+        event.source.cube = event.timestamp
 
 @hook("message")
 def stopCubeTimer(event):
-    if hasattr(event.source, 'cube'):
-        if not event.content.startswith('*cube'):
-            timed = datetime.datetime.now() - event.source.cube
+    if hasattr(event.source, 'cube') and not event.content.startswith('*cube'):
+            timed = event.timestamp - event.source.cube
+            assert timed > 0, "bogus timestamp information or major logic flaw"
             event.reply("%s: %s" % (event.source.nick, timed))
             del event.source.cube
