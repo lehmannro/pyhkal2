@@ -16,7 +16,7 @@ def startCubeTimer(event, r):
 @hook("message")
 def stopCubeTimer(event):
     if hasattr(event.source, 'cube'):
-        if not event.startswith('*cube'):
+        if not event.message.startswith('*cube'):
             timed = time.time() - event.source.cube
             event.reply("%s: %.2g" % (event.source.nick, timed))
             del event.source.cube
