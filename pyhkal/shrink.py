@@ -27,6 +27,7 @@ IRCUser |             IRCChannel
 
 """
 
+import datetime
 from _weakrefset import WeakSet
 from weakref import WeakValueDictionary
 
@@ -91,10 +92,13 @@ def IdentityFactory(service):
 
 
 class Event(object):
-    def __init__(self, target, source, content):
+    def __init__(self, target, source, content, timestamp=None):
+        if timestamp is None:
+            timestamp = datetime.datetime.now()
         self.target = target
         self.source = source
         self.content = content
+        self.timestamp = timestamp
 
     def reply(self, msg):
         self.target.message(msg)
