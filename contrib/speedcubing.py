@@ -16,6 +16,7 @@ def startCubeTimer(event, r):
 def stopCubeTimer(event):
     if hasattr(event.source, 'cube') and not event.content.startswith('*cube'):
             timed = event.timestamp - event.source.cube
-            assert timed > 0, "bogus timestamp information or major logic flaw"
+            assert timed >= 0, "bogus timestamp information or major logic flaw"
+            # can timed be zero, actually?
             event.reply("%s: %s" % (event.source.nick, timed))
             del event.source.cube
