@@ -402,15 +402,15 @@ class IRCClient(irc.IRCClient, object):
             self.whoamount -= 1
             if self.whoamount == 0: #
                 # We cannot assure, which WHO-reply ends here, so we have to wait for ALL current requests to finish.
-                for ID in self.whoresults:
+                for ID, value in self.whoresults.iteritems():
                     #print "res:", repr(self.whoresults), "id", repr(ID)
-                    d, target = self.whocalls[ID]
-                    if len(self.whoresults[ID]) > 0:
-                        d.callback(self.whoresults[ID])
+                    d, target = self.whocalls[ID] 
+                    if len(value) > 0:
+                        d.callback(value)
                     else:
                         d.errback(ValueError("WHO-Request returned an empty result-set"))
-            self.whocalls = {}
-            self.whoresults = {}
+                self.whocalls = {}
+                self.whoresults = {}
 
     def getInfo(self, target):
         """ Example of sent command: WHO #pyhkal, %nafuhrt,666"""
