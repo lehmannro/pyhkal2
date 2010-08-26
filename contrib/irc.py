@@ -5,8 +5,7 @@
 __version__ = 0.1
 __author__ = "freddyb"
 
-from twisted.application import internet
-from twisted.internet import protocol, reactor, defer
+from twisted.internet import protocol
 from twisted.words.protocols import irc
 from itertools import cycle
 from types import MethodType

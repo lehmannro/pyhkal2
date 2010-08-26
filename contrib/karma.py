@@ -5,7 +5,7 @@ __version__ = "0.1"
 #__requires__ = ["irc"]
 __author__ = "freddyb"
 
-import datetime, time, re, functools
+import datetime, time, re
 
 getKarma = chaos("getKarma","""
     if (doc.doctype == "karma") {

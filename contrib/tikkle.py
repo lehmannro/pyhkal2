@@ -7,7 +7,7 @@
     - Fetch tikkles                               [x]
 
 """
-from twisted.internet import defer
+
 import re
 import datetime
 

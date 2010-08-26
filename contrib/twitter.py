@@ -5,7 +5,6 @@ from twittytwister.twitter import Twitter
 from oauth import oauth
 from functools import partial
 from twisted.internet.task import LoopingCall
-from collections import defaultdict
 from datetime import datetime
 
 

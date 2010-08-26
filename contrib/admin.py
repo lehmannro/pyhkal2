@@ -1,7 +1,6 @@
 # coding: utf-8
 
 from pyhkal import shopping
-from twisted.internet import defer
 
 #TODO: should we check in each command for parameter length?
 
