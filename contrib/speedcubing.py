@@ -37,7 +37,7 @@ def getCubeScramble(event):
     event.reply("Try %s" % cubescramble(25))
 
 @hook("message", expr=r'^\*cube\b')
-def startCubeTimer(event, r):
+def startCubeTimer(event):
     if not hasattr(event.source, 'cube'):
         # source will persist through events
         event.source.cube = event.timestamp

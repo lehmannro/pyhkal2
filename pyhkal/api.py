@@ -54,12 +54,12 @@ def hook(service, event, expr=None):
         if expr:
             @wraps(func)
             def new_func(event):
-                match = comp_re.findall(event.content)
-                for element in match:
-                    if isinstance(element, basestring):
-                        func(event, element)
-                    else: # tuple
-                        func(event, *element)
+                matches = comp_re.finditer(event.content)
+                for match in matches:
+                    if match.groupdict():
+                        func(event, **match.groupdict())
+                    else:
+                        func(event, *match.groups())
         else:
             new_func = func
 
