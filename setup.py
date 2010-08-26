@@ -14,7 +14,6 @@ setup(name='pyhkal',
 #      license="",
       packages=['pyhkal', 'pyhkal.contrib', 'pyhkal.test', 'twisted.plugins'],
       package_dir={'pyhkal.contrib': 'contrib', 'pyhkal.test': 'test'},
-      package_data={'twisted': ['plugins/pyhkal_plugin.py']},
       classifiers=[
           'Development Status :: 2 - Pre-Alpha',
           'Topic :: Communications :: Chat :: Internet Relay Chat',
