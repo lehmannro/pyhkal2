@@ -16,7 +16,7 @@ def isadmin(source):
         defer.returnValue(identity.get(u'admin',False))
 
 
-@hook("load")
+@register("load")
 @defer.inlineCallbacks
 def load_module(event):
     admin = yield isadmin(event.source)
