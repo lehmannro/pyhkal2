@@ -5,7 +5,6 @@ from pyhkal import shopping
 #TODO: should we check in each command for parameter length?
 
 __version__ = "0.1"
-__requires__ = ["irc"]
 
 @defer.inlineCallbacks
 def isadmin(source):
