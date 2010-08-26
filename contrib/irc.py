@@ -2,7 +2,7 @@
 
 "Internet Relay Chat transport layer"
 
-__version__ = 0.1
+__version__ = 0.9
 __author__ = "freddyb"
 
 from twisted.internet import protocol
