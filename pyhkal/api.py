@@ -8,18 +8,19 @@ from inspect import getargspec, currentframe
 from pyhkal.engine import Pyhkal
 from pyhkal import shrink
 
+#XXX functions should eventually go into their respective modules and expose
+#    can become a plain list
+
 api = {}
+statics = {}
 def apply(service):
     applied = dict((name, partial(func, service)) for name, func in api.iteritems())
-    #XXX raw expose decorator
-    for o in shrink.Avatar, shrink.Event, shrink.Location, shrink.MultitonMeta:
-        applied[o.__name__] = o
-    applied['Identity'] = shrink.IdentityFactory(service)
+    applied.update(statics)
+    #XXX hack until davenport grows into a full API
     applied['davenport'] = service.davenport
-    applied['defer'] = twisted.internet.defer
     return applied
 
-def expose(item_or_name, item=None):
+def expose(item_or_name, item=None, static=False):
     """
     >>> expose(obj) # requires obj to have __name__ attribute
     >>> @expose
@@ -27,10 +28,22 @@ def expose(item_or_name, item=None):
     ...
     >>> expose("name", obj)
     """
+    global statics, api
+    dest = statics if static else api
     if item is not None:
-        api[item_or_name] = item
+        dest[item_or_name] = item
     else:
-        api[item_or_name.__name__] = item_or_name
+        dest[item_or_name.__name__] = item_or_name
+
+expose(shrink.Identity)
+expose(shrink.Avatar, static=True)
+expose(shrink.Event, static=True)
+expose(shrink.Location, static=True)
+expose(shrink.MultitonMeta, static=True)
+expose(Pyhkal.dispatch_command)
+expose(Pyhkal.dispatch_event)
+expose(Pyhkal.twist)
+expose('defer', twisted.internet.defer, static=True)
 
 @expose
 def hook(service, event, expr=None):
@@ -65,7 +78,6 @@ def register(service, func_or_name):
     service.add_command(func_or_name.__name__, func_or_name)
     return func_or_name
 
-expose(Pyhkal.twist)
 
 @expose
 def chaos(service, name, script):
@@ -99,6 +111,3 @@ def remember(service, breadcrumbs, default=_none):
         if default is not _none:
             return default
         raise
-
-expose(Pyhkal.dispatch_command)
-expose(Pyhkal.dispatch_event)
