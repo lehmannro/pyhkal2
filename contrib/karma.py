@@ -40,18 +40,18 @@ def karma_edit(event, wort, delta):
         yield davenport.saveDoc(entry) # entry in db stecken
         event.reply("%s hat nun einen karmawert von %s" % (wort, delta))
 
-@hook("message", r"(\S\S+\+\+)(?:\s|$)") #r"\b(\w+)\+\+"
+@hook("message", r"(\S\S+)\+\+(?:\s|$)") #r"\b(\w+)\+\+"
 def karma_add(event, wort):
-    return karma_edit(event, wort[:-2], +1)
+    return karma_edit(event, wort, +1)
 
-@hook("message", r"([\S]\S+--)(?:\s|$)") # r"\b(\w+)--"
+@hook("message", r"([\S]\S+)--(?:\s|$)") # r"\b(\w+)--"
 def karma_del(event, wort):
-    return karma_edit(event, wort[:-2], -1)
-        
-@hook("message", r"(\S\S+==)(?:\s|$)") # r"\b(\w+)=="
+    return karma_edit(event, wort, -1)
+
+@hook("message", r"(\S\S+)==(?:\s|$)") # r"\b(\w+)=="
 @defer.inlineCallbacks
 def karma_say(event, wort):
-    wort = wort.lower()[:-2]
+    wort = wort.lower()
     result = yield getKarma(key=wort)
     if result[u'rows']: # karma erhöhen
         value = result[u'rows'][0][u'value']
