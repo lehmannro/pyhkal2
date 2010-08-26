@@ -21,27 +21,31 @@ def isadmin(source):
 def load_module(event):
     admin = yield isadmin(event.source)
     if admin:
-        for module in event.content:
+        for module in event.content.split():
             try:
                 shopping.buy(module)
             except BaseException as err: # gotta catch 'm all.
                 event.reply("Error: %s" % err)
+                return
+        event.reply("Loading %s finished." % event.content)
 
 @register("reload")
 @defer.inlineCallbacks
 def reload_module(event):
     admin = yield isadmin(event.source)
     if admin:
-        for module in event.content:
-            shopping.revoke(module)
+        for module in event.content.split():
+            shopping.renew(module)
+        event.reply("Reloading %s finished." % event.content)
 
 @register("unload")
 @defer.inlineCallbacks
 def unload_module(event):
     admin = yield isadmin(event.source)
     if admin:
-        for module in event.content:
-            shopping.renew(module)
+        for module in event.content.split():
+            shopping.revoke(module)
+        event.reply("Unloading %s finished." % event.content)
 
 @register("eval")
 @defer.inlineCallbacks             
@@ -59,4 +63,4 @@ def eval_code(event):
 def exec_code(event):
     admin = yield isadmin(event.source)
     if admin:
-        exec event.content.split(" ", 1)[1] in globals()
+        exec event.content in globals()

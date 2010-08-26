@@ -64,7 +64,8 @@ def buy(what):
     return mod
 
 def renew(what):
-    reload(sys.modules['pyhkal:%s' % what])
+    revoke(what)
+    buy(what)
 
 def revoke(what):
     del sys.modules['pyhkal:%s' % what]
