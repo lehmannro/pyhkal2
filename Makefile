@@ -9,7 +9,7 @@ run: install
 	$(VIRTUALENV)/bin/twistd -n $(T) pyhkal config.yaml
 
 test: install
-	cd "$(VIRTUALENV)"; ./bin/activate; trial pyhkal.test
+	cd "$(VIRTUALENV)"; . bin/activate; trial pyhkal.test
 
 check: install
 	/bin/bash -c "cd '$(VIRTUALENV)'; bin/python -m compileall lib/python*/site-packages/pyhkal/"
