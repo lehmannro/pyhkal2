@@ -13,8 +13,13 @@ def handler(event):
     args = event.content
     if len(args) == 0:
         return
-    # num = asciicount("*!*" + event.source.ident)
-    num = asciicount("*!*")
+    # TODO
+    # TiHKAL has some broken function to get the ident that strips some characters so we just use the nick.
+    # in the future this should depend on the idendity of an avatar so the results are protocol independent
+    if hasattr(event.source, "nick"):
+        num = asciicount("*!*" + event.source.nick)
+    else:
+        num = asciicount("*!*")
     decide_result = regexdecide(args, num)    
     event.reply(u"Du solltest dich %s entscheiden." % decide_result)
 
