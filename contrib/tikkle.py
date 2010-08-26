@@ -79,6 +79,5 @@ def sendMsg(event,r):
         if sent:
             event.source.message("Message successfully sent!")
 
-## AIDS
 def hasIdentity(event):
-    return not ((hasattr(event.source,"identity")) and (event.source.identity == None))
+    return event.source.identity is not None
