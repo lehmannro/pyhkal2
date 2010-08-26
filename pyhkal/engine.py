@@ -20,6 +20,7 @@ from pyhkal.davenport import Davenport
 class Pyhkal(service.Service):
     def __init__(self, screwdriver):
         self.screwdriver = screwdriver
+        self.listeners = collections.defaultdict(WeakSet)
 
     def startService(self):
         #XXX reloadable
@@ -27,7 +28,7 @@ class Pyhkal(service.Service):
         self.debug = self.screwdriver.get('debug', False)
         self.davenport = Davenport(db['host'], 'pyhkal', db['username'],
                 db['password'], db['port'])
-        self.listeners = collections.defaultdict(WeakSet)
+        self.listeners.clear()
         self.commands = weakref.WeakValueDictionary()
         self.mall = shopping.checkout(self)
         for mod in self.screwdriver['modules']:
