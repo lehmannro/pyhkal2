@@ -6,6 +6,7 @@ from pyhkal import engine
 class MockingPyhkal(engine.Pyhkal):
     def __init__(self):
         self.davenport = MockingDavenport()
+        self.debug = False #XXX should probably be set in engine.Pyhkal
         engine.Pyhkal.__init__(self, {})
 
 class MockingDavenport(object):
