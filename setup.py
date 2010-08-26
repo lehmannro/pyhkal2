@@ -15,7 +15,7 @@ setup(name='pyhkal',
       packages=['pyhkal', 'pyhkal.contrib', 'pyhkal.test', 'twisted.plugins'],
       package_dir={'pyhkal.contrib': 'contrib', 'pyhkal.test': 'test'},
       classifiers=[
-          'Development Status :: 2 - Pre-Alpha',
+          'Development Status :: 3 - Alpha',
           'Topic :: Communications :: Chat :: Internet Relay Chat',
       ],
 )
