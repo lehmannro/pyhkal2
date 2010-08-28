@@ -8,7 +8,6 @@ from twisted.internet import reactor
 def timer(event):
     args = event.content.split(" ", 1)
     if len(args) >= 2 and args[0].isdigit():
-        # TODO add nickname when there's a generice property
-        reactor.callLater(int(args[0]), event.reply, u"Timer: %s" % args[1])
+        reactor.callLater(int(args[0]), event.reply, u"Timer for %s: %s" % (event.source.nick, args[1]) )
     else:
         event.reply("timer <delay in seconds> <message>")
