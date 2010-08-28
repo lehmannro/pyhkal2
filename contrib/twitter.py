@@ -323,10 +323,11 @@ def refresh_task():
 #                lambda x: twit().friends(lambda x: friend_collect(collection,x), params={'since_id':str(since_id)}).addBoth(lambda x: refresh_done(collection))
 #            )
 
-refresher = LoopingCall(refresh_task)
 
 
-
+def loop(*args):
+    refresher = LoopingCall(refresh_task)
+    refresher.start(REFRESHDELAY).addBoth(loop)
 
 # Initialization
 @hook('startup')
@@ -338,7 +339,7 @@ def startup():
         since_id = doc['since_id']
     except:
         pass
-
-    refresher.start(REFRESHDELAY)
+    
+    loop()
 
 
