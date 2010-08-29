@@ -328,10 +328,11 @@ class IRCClient(irc.IRCClient, object):
             prefix = spacetuple[0][1:]
             nick = prefix.split('!', 1)[0]
             if not nick in self.nickdb:
-                # this might not even be a problem, if you imagine a private message from someone with no common channels
-                # however some KeyErrors *have* occured, so we should monitor these log-messages in future ;)
-                print "## NickDB ##: %s appeared and wasnt in nickdb; introduced via '%s'" % (nick, data)
-                self.nickdb[nick] = IRCUser.fromhostmask(prefix)
+                if spacetuple[1] != "NICK" and spacetuple[1] != "QUIT": # dont want somebody who's changing :<
+                    # this might not even be a problem, if you imagine a private message from someone with no common channels
+                    # however some KeyErrors *have* occured, so we should monitor these log-messages in future ;)
+                    print "## NickDB ##: %s appeared and wasnt in nickdb; introduced via '%s'" % (nick, data)
+                    self.nickdb[nick] = IRCUser.fromhostmask(prefix)
 
         if numeric == "001":
             ":clanserver4u1.de.quakenet.org 001 PyHKAL :Welcome to the QuakeNet IRC Network, PyHKAL3"
@@ -362,6 +363,7 @@ class IRCClient(irc.IRCClient, object):
             ":clanserver4u1.de.quakenet.org 353 ChosenOne = #chan :@alice +bob charlie"
             features = self.supported.getFeature("PREFIX")
             prefixes = [k[0] for k in features.values()]
+
             for nickname in colontuple[2].split(' '): # every nickname...
                 for p in prefixes: # remove prefix if set
                     if (p == nickname[0]):
@@ -373,10 +375,13 @@ class IRCClient(irc.IRCClient, object):
                         nick = nickname
                 #mode is +,@, ...
                 #we need v,o, ...
-                for k,v in features.items(): # {u'o': (u'@', 0), u'v': (u'+', 1)}
-                    if v[0] == mode:
-                        self.chandb[spacetuple[4]].nicklist[nick] = set(k)
-                        break # save speed :P
+                if mode:
+                    for k,v in features.items(): # {u'o': (u'@', 0), u'v': (u'+', 1)}
+                        if v[0] == mode:
+                            self.chandb[spacetuple[4]].nicklist[nick] = set(k)
+                else:
+                    self.chandb[spacetuple[4]].nicklist[nick] = set()
+
             
         if numeric == "366": # end of /names list
             dispatch_event('irc.endofnames', spacetuple[3] )
@@ -451,7 +456,7 @@ class IRCClient(irc.IRCClient, object):
 class IRCClientFactory(protocol.ReconnectingClientFactory):
     protocol = IRCClient
     initialDelay = 10.0
-    factor = 2.5 # Phi is not enough, math.e is too much.
+    factor = 2.7 # Phi is not enough, math.e is too much.
     maxDelay = 60 * 5
     def buildProtocol(self, addr):
         p = self.protocol()
