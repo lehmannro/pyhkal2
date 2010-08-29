@@ -9,7 +9,8 @@ from collections import defaultdict
 from datetime import datetime
 
 
-REFRESHDELAY = 60
+REFRESHDELAY = remember("twitter refresh", 60)
+WRITE_SINCE_ID = remember("twitter write_since_id", True)
 
 """
 dict of since_id values for every task
@@ -128,10 +129,12 @@ class Direct(PrivateTweet):
 
 class User(Avatar):
     __metaclass__ = MultitonMeta
+    users = set()
     def __init__(self, name):
         Avatar.__init__(self, name)
         self.name = name
         self.identity_deferred = self.identify()
+        self.users.add(self)
 
     @defer.inlineCallbacks
     def identify(self):
@@ -312,12 +315,13 @@ def refresh_task():
             since_id = int_id
         delegate(msg)
 
-    try:
-        doc = yield davenport.openDoc('twitter')
-    except:
-        doc = {}
-    doc['since_id'] = since_id
-    davenport.saveDoc(doc, 'twitter')
+    if WRITE_SINCE_ID:
+        try:
+            doc = yield davenport.openDoc('twitter')
+        except:
+            doc = {}
+        doc['since_id'] = since_id
+        davenport.saveDoc(doc, 'twitter')
 
 #    return twit().replies(lambda x: reply_collect(collection, x), params={'since_id':str(since_id)}).addBoth(
 #                lambda x: twit().friends(lambda x: friend_collect(collection,x), params={'since_id':str(since_id)}).addBoth(lambda x: refresh_done(collection))
