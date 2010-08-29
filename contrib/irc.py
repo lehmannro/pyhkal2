@@ -185,6 +185,10 @@ class IRCClient(irc.IRCClient, object):
             target = IRCQuery(self.nickdb[nick])
         else:
             target = self.chandb[recip]
+            #dirtydebug
+            if 'nicklist' in message:
+                print self.chandb[recip].nicklist
+            #dirtydebug
         event = IRCMessage(target=target, source=self.nickdb[nick], content=message)
         dispatch_event("message", event)
         dispatch_event("irc.privmsg", event)
@@ -195,15 +199,8 @@ class IRCClient(irc.IRCClient, object):
             dispatch_command(command, command_event)
 
     def noticed(self, sender, recip, message):
-        # the original noticed-function just passes its arguments towards privmsg() - we dont want to do that!
+        # the original noticed-function just passed its arguments towards privmsg() - we dont want to do that!
         pass
-        #FIXME the lines below are just copied from privmsg - how appropriate this is I dont know
-        #if recip == self.nickname:
-        #    origin = Origin('query', sender, recip)
-        #else:
-        #    origin = Origin('channel', sender, recip)
-        #dispatch_event("irc.notice", sender, recip, message) # remember, that we MUST NEVER respont
-        #dispatch_event("notice", origin, message)            # automatically on notices
 
     def signedOn(self):
         irc.IRCClient.signedOn(self)
@@ -211,31 +208,46 @@ class IRCClient(irc.IRCClient, object):
         for channel in self.channels:
             self.join(channel)
 
-    def modeChanged(self, user, channel, set, modes, args):
-        irc.IRCClient.modeChanged(self, user, channel, set, modes, args)
-
+    def modeChanged(self, user, channel, was_set, modes, args):
+        irc.IRCClient.modeChanged(self, user, channel, was_set, modes, args)
+        print "MODE CHANGE", user, channel, was_set, modes, args
+        #2010-08-29 16:48:20+0200 [IRCClient,client] MODE CHANGE ChosenOne!~ChosenOne@ChosenOne.users.quakenet.org #pyhkal True o (u'Janno',)
+        nickmodes = self.supported.getFeature("PREFIX") # {u'o': (u'@', 0), u'v': (u'+', 1)}
         if channel in self.chandb:
             nick = user.split('!', 1)[1]
-            def want_param(mode):
-                chanmodes = self.supported.getFeature('CHANMODES')
-                if (mode in chanmodes['param']) or (mode in chanmodes['setParam']):
-                    return True
-                else:
-                    return False
-            if set:
-                params = list(args) 
+            params = list(args) 
+            if was_set:
                 for m in modes:
-                    value = params.pop(0) if (want_param(m)) else None
-                    self.chandb[channel].modes[m] = value
+                    if m in nickmodes: # update nicklist
+                        self.chandb[channel].nicklist[params.pop(0)].add(modes)                        
+                    elif not m in self.supported.getFeature('CHANMODES')['addressModes']:
+                        self.chandb[channel].modes[m] = params.pop(0)
+                    else:
+                        pass # ban, invite, ban-exceptions
+
             else:
                 for m in modes:
-                    del(self.chandb[channel].modes[m])
+                    if m in nickmodes: # update nicklist
+                        nick = params.pop(0)
+                        if modes in self.chandb[channel].nicklist[nick]:
+                            # we need this check, because +v of an +o is invisible :<
+                            self.chandb[channel].nicklist[nick].remove(modes)                        
+                    elif not m in self.supported.getFeature('CHANMODES')['addressModes']:
+                        del(self.chandb[channel].modes[m])
+                    else:
+                        pass # ban, invite, ban-exceptions
 
+        elif channel == self.nickname:
+            print "Usermode", self.nickname, ('+' if was_set else '-'), modes, args
+            #Usermode pyhkal_ + i (None,)
+
+        #NUUUUU {'noParam': 'imnpstrDducCNMT', 'setParam': 'l', 'addressModes': 'b', 'param': 'k'}
         #XXX will also trigge for user-mode
-        #print "MODE CHANGE", user, channel, set, modes, args
+        #if channel == self.nickname ...
 
-        dispatch_event("irc.modechange", user, channel, set, modes, args)
-        if set:
+
+        dispatch_event("irc.modechange", user, channel, was_set, modes, args)
+        if was_set:
             dispatch_event("irc.setmode", user, channel, modes, args)
         else:
             dispatch_event("irc.delmode", user, channel, modes, args)
@@ -264,7 +276,7 @@ class IRCClient(irc.IRCClient, object):
         channel = params[0]
         if not nick in self.nickdb:
             self.nickdb[nick] = IRCUser.fromhostmask(prefix)
-        self.chandb[channel].nicklist[nick] = ''
+        self.chandb[channel].nicklist[nick] = set()
         if nick != self.nickname:
             d = self.getInfo(nick)
             d.addCallback(self.UpdateNickDB)
@@ -325,15 +337,13 @@ class IRCClient(irc.IRCClient, object):
             ":clanserver4u1.de.quakenet.org 001 PyHKAL :Welcome to the QuakeNet IRC Network, PyHKAL3"
             self.nickname = spacetuple[2]
             #XXX do NOT remove. when connecting to a bouncer(e.g. sbnc) we do not really know what our nick is, before this event occurs
-
+    
         if numeric == '324':
             """irc.quakenet.org 324 woobie #channel +tncCNul 30 """
             channel = spacetuple[3]
             modes = spacetuple[4] if (spacetuple[4][0] != '+') else spacetuple[4][1:]
             if (len(spacetuple) > 5):
                 params = spacetuple[5].split()
-            #print "NUUUUU", self.supported.getFeature('CHANMODES')
-            #NUUUUU {'noParam': 'imnpstrDducCNMT', 'setParam': 'l', 'addressModes': 'b', 'param': 'k'}
             def want_param(mode):
                 chanmodes = self.supported.getFeature('CHANMODES')
                 if (mode in chanmodes['param']) or (mode in chanmodes['setParam']):
@@ -361,7 +371,12 @@ class IRCClient(irc.IRCClient, object):
                     else:
                         mode = ""
                         nick = nickname
-                self.chandb[spacetuple[4]].nicklist[nick] = mode
+                #mode is +,@, ...
+                #we need v,o, ...
+                for k,v in features.items(): # {u'o': (u'@', 0), u'v': (u'+', 1)}
+                    if v[0] == mode:
+                        self.chandb[spacetuple[4]].nicklist[nick] = set(k)
+                        break # save speed :P
             
         if numeric == "366": # end of /names list
             dispatch_event('irc.endofnames', spacetuple[3] )
