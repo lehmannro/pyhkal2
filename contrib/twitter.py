@@ -331,7 +331,7 @@ def refresh_task():
 
 def loop(*args):
     refresher = LoopingCall(refresh_task)
-    refresher.start(REFRESHDELAY).addBoth(loop)
+    refresher.start(interval=REFRESHDELAY, now=False).addBoth(loop)
 
 # Initialization
 @hook('startup')
