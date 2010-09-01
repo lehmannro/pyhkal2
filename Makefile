@@ -25,17 +25,17 @@ pylint: install; SH='/bin/bash'
 
 virtualenv:
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
-	$(VIRTUALENV)/bin/pip -q install Twisted
-	$(VIRTUALENV)/bin/pip -q install paisley
-	$(VIRTUALENV)/bin/pip -q install pyopenssl
-	$(VIRTUALENV)/bin/pip -q install oauth
-	$(VIRTUALENV)/bin/pip -q install twittytwister
-	$(VIRTUALENV)/bin/pip -q install PyYAML
+	$(VIRTUAL) pip -q install Twisted
+	$(VIRTUAL) pip -q install paisley
+	$(VIRTUAL) pip -q install pyopenssl
+	$(VIRTUAL) pip -q install oauth
+	$(VIRTUAL) pip -q install twittytwister
+	$(VIRTUAL) pip -q install PyYAML
 $(VIRTUALENV):
 	make virtualenv
 install: $(VIRTUALENV) $(SOURCES)
-	$(VIRTUALENV)/bin/python setup.py --quiet sdist
-	$(VIRTUALENV)/bin/python setup.py --quiet install
+	$(VIRTUAL) python setup.py --quiet sdist
+	$(VIRTUAL) python setup.py --quiet install
 
 clean:
 	rm -rf "$(VIRTUALENV)"
