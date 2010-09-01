@@ -1,15 +1,20 @@
 VIRTUALENV = var
 SOURCES = $(wildcard pyhkal/*.py) $(wildcard contrib/*.py) $(wildcard bin/*) \
 		  setup.py
+ifdef WIN32
+	VIRTUAL = $(VIRTUALENV)/Scripts/activate.bat;
+else
+	VIRTUAL = . $(VIRTUALENV)/bin/activate;
+endif
 
 .PHONY: run test virtualenv clean
 
 run: install
 	@echo "Running PyHKAL.."
-	$(VIRTUALENV)/bin/twistd -n $(T) pyhkal config.yaml
+	$(VIRTUAL) twistd -n $(T) pyhkal config.yaml
 
 test: install
-	cd "$(VIRTUALENV)"; . bin/activate; trial pyhkal.test
+	$(VIRTUAL) cd $(VIRTUALENV); trial pyhkal.test
 
 check: install
 	/bin/bash -c "cd '$(VIRTUALENV)'; bin/python -m compileall lib/python*/site-packages/pyhkal/"
