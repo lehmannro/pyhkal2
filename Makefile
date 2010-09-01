@@ -24,9 +24,10 @@ pylint: install; SH='/bin/bash'
 	cd "${VIRTUALENV}";\
 	for version in `echo lib/python*/site-packages/`; do cd "$${version}"; pylint -E pyhkal; done
 
+# line 2: pip on Windows installs twisted/ folder otherwise
 virtualenv:
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
-	$(VIRTUAL)pip -q install Twisted
+	cd $(VIRTUALENV); $(BIN)/pip -q install Twisted
 	$(VIRTUAL)pip -q install paisley
 	$(VIRTUAL)pip -q install pyopenssl
 	$(VIRTUAL)pip -q install oauth
