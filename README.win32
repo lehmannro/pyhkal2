@@ -1,0 +1,17 @@
+Running PyHKAL requires a few steps that might not be obvious:
+
+1. Get Mingw32
+   1. Google.
+   2. Add <Mingw32 install path>\bin to %PATH%
+   3. Create 'pydistutils.cfg' in your Users or Documents and Settings directory (e.g. 'C:\Documents and Settings\<username>\') with the following content:
+[build]
+compiler = mingw32
+
+
+2. Get OpenSSL for Win32. 
+   1. At the time of writing, http://www.slproweb.com/download/Win32OpenSSL-1_0_0a.exe is the latest version. Check http://www.slproweb.com/products/Win32OpenSSL.html for all available versions. You will need the package recommended for developers, i.e. no "Light" package.
+   2. Install OpenSSL for Win32 and add <OpenSLL install path>\bin to %PATH%
+
+
+3. Your done. Now, don't forget to use `make WIN32=1` instead of just `make`.
+
