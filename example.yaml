@@ -1,3 +1,8 @@
+database:
+  host: localhost
+  username: admin
+  password: YOURPASSWORD
+
 irc:
   server: irc.de.quakenet.org
   port: 6667
