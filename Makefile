@@ -1,5 +1,8 @@
 PYLINTOPTIONS = -E
+INSTALLOPTS = --quiet
+PIPOPTIONS = -q
 VIRTUALENV = var
+
 SOURCES = $(wildcard pyhkal/*.py) $(wildcard contrib/*.py) $(wildcard bin/*) \
 		  setup.py
 ifdef WIN32
@@ -26,17 +29,17 @@ pylint: install
 # line 2: pip on Windows installs twisted/ folder otherwise
 virtualenv:
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
-	cd $(VIRTUALENV); $(BIN)/pip -q install Twisted
-	$(VIRTUAL)pip -q install paisley
-	$(VIRTUAL)pip -q install pyopenssl
-	$(VIRTUAL)pip -q install oauth
-	$(VIRTUAL)pip -q install twittytwister
-	$(VIRTUAL)pip -q install PyYAML
+	cd $(VIRTUALENV); $(BIN)/pip $(PIPOPTIONS) install Twisted
+	$(VIRTUAL)pip $(PIPOPTIONS) install paisley
+	$(VIRTUAL)pip $(PIPOPTIONS) install pyopenssl
+	$(VIRTUAL)pip $(PIPOPTIONS) install oauth
+	$(VIRTUAL)pip $(PIPOPTIONS) install twittytwister
+	$(VIRTUAL)pip $(PIPOPTIONS) install PyYAML
 $(VIRTUALENV):
 	make virtualenv
 install: $(VIRTUALENV) $(SOURCES)
-	$(VIRTUAL)python setup.py --quiet sdist
-	$(VIRTUAL)python setup.py --quiet install
+	$(VIRTUAL)python setup.py $(INSTALLOPTS) sdist
+	$(VIRTUAL)python setup.py $(INSTALLOPTS) install
 
 clean:
 	rm -rf "$(VIRTUALENV)"
