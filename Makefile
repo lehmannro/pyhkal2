@@ -1,3 +1,4 @@
+PYLINTOPTIONS = -E
 VIRTUALENV = var
 SOURCES = $(wildcard pyhkal/*.py) $(wildcard contrib/*.py) $(wildcard bin/*) \
 		  setup.py
@@ -21,9 +22,9 @@ test: install
 check: install
 	/bin/bash -c "cd '$(VIRTUALENV)'; bin/python -m compileall lib/python*/site-packages/pyhkal/"
 
-pylint: install; SH='/bin/bash'
-	cd "${VIRTUALENV}";\
-	for version in `echo lib/python*/site-packages/`; do cd "$${version}"; pylint -E pyhkal; done
+pylint: install
+	$(VIRTUAL)pip install pylint
+	cd $(VIRTUALENV); $(BIN)/pylint $(PYLINTOPTIONS) pyhkal
 
 # line 2: pip on Windows installs twisted/ folder otherwise
 virtualenv:
