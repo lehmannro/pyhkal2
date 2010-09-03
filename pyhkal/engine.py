@@ -27,7 +27,7 @@ class Pyhkal(service.Service):
         db = self.screwdriver['database']
         self.debug = self.screwdriver.get('debug', False)
         self.davenport = Davenport(db['host'], 'pyhkal', db['username'],
-                db['password'], db['port'])
+                db['password'], db.get('port', 5984))
         self.listeners.clear()
         self.commands = weakref.WeakValueDictionary()
         self.mall = shopping.checkout(self)
