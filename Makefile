@@ -19,9 +19,6 @@ test: install
 	cd $(VIRTUALENV); $(BIN)/trial pyhkal.test
 # trial runs pyhkal/ directory otherwise
 
-check: install
-	/bin/bash -c "cd '$(VIRTUALENV)'; bin/python -m compileall lib/python*/site-packages/pyhkal/"
-
 pylint: install
 	$(VIRTUAL)pip install pylint
 	cd $(VIRTUALENV); $(BIN)/pylint $(PYLINTOPTIONS) pyhkal
