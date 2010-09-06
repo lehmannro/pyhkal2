@@ -7,6 +7,8 @@ Deployment Abstract Validator Subscription
 Actually, this module's task is /only/ to bind avatars to identities
 """
 
+from twisted.web.error import Error
+
 __version__ = "0.1"
 __requires__ = ["irc"]
 __author__ = "freddyb"
@@ -32,7 +34,10 @@ def findIdentities(nickdb):
         qauth = avatar.auth
         if qauth is not None:
             print "calling getAuths view, asking for nick %s auth %s" % (nickname, repr(qauth))
-            result = yield getAuths(key=qauth)
+            try:
+                result = yield getAuths(key=qauth)
+            except Error:
+                continue
             if len(result['rows']) > 0:
                 docid = result['rows'][0]['id']
                 identity = Identity(str(docid))

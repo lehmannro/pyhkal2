@@ -6,6 +6,7 @@ __version__ = "0.1"
 __author__ = "freddyb"
 
 import datetime, time, re
+from twisted.web.error import Error
 
 getKarma = chaos("getKarma","""
     if (doc.doctype == "karma") {
@@ -20,7 +21,10 @@ karmaspam = 600
 @defer.inlineCallbacks
 def karma_edit(event, wort, delta):
     wort = wort.lower()
-    result = yield getKarma(key=wort, include_docs='true')
+    try:
+        result = yield getKarma(key=wort, include_docs='true')
+    except Error:
+        result = dict(rows=0)
     #print "DB antwort fuer getkarma key=", wort, 'ist' , result
     if result[u'rows']: # karma erhöhen
         entry = result[u'rows'][0][ u'doc'] #[u'id']
