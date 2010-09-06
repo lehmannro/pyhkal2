@@ -32,6 +32,7 @@ def cubescramble(num):
         scramble.append(d)
     return " ".join(MOVES[d['axis']][d['move']] + MOVEMODS[d['movemod']] for d in scramble)
 
+@hook("message", expr=r'^\.3\b')
 @register("3")
 def getCubeScramble(event):
     event.reply("Try %s" % cubescramble(25))
