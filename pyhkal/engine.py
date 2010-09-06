@@ -35,8 +35,12 @@ class Pyhkal(service.Service):
             shopping.buy(mod)
         self.dispatch_event("startup")
 
-    def twist(self, host, port, factory):
-        reactor.connectTCP(host, port, factory)
+    def twist(self, *args):
+        """twist([host,] port, factory)"""
+        if len(args) == 2:
+            reactor.listenTCP(*args)
+        else:
+            reactor.connectTCP(*args)
 
     def add_listener(self, name, listener):
         self.listeners[name.lower()].add(listener)
