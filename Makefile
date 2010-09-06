@@ -19,17 +19,17 @@ run: install
 	$(VIRTUAL)twistd -n $(T) pyhkal config.yaml
 
 test: install
-	cd $(VIRTUALENV); $(BIN)/trial pyhkal.test
+	cd $(VIRTUALENV) && $(BIN)/trial pyhkal.test
 # trial runs pyhkal/ directory otherwise
 
 pylint: install
 	$(VIRTUAL)pip install pylint
-	cd $(VIRTUALENV); $(BIN)/pylint $(PYLINTOPTIONS) pyhkal
+	cd $(VIRTUALENV) && $(BIN)/pylint $(PYLINTOPTIONS) pyhkal
 
 # line 2: pip on Windows installs twisted/ folder otherwise
 virtualenv:
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
-	cd $(VIRTUALENV); $(BIN)/pip $(PIPOPTIONS) install Twisted
+	cd $(VIRTUALENV) && $(BIN)/pip $(PIPOPTIONS) install Twisted
 	$(VIRTUAL)pip $(PIPOPTIONS) install paisley
 	$(VIRTUAL)pip $(PIPOPTIONS) install pyopenssl
 	$(VIRTUAL)pip $(PIPOPTIONS) install oauth
