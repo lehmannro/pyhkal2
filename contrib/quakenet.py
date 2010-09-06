@@ -24,22 +24,17 @@ getAuths = chaos("getAuths","""
 def findIdentities(nickdb):
     #key in nickdb =  nickname
     # value für nicckdb[nickname] = IRCUser{ nick: .., auth: ..., realname: ... }
-    for nickname in nickdb:
-        if hasattr(nickdb[nickname], 'auth') and nickdb[nickname].auth:
-            if nickdb[nickname].identity is not None:
-                continue
-            qauth = nickdb[nickname].auth
-            if (qauth != None):
-                print "calling getAuths view, asking for nick %s auth %s" % (nickname, repr(qauth))
-                result = yield getAuths(key=qauth)
-                if len(result[u'rows']) > 0:
-                    docid = result[u'rows'][0][u'id']
-                    #print "Foo-Yielding:", nickname, "id of user", docid
-                    identity = Identity(str(docid))
-                    identity.link(nickdb[nickname])
-                    nickdb[nickname].identity = identity
-                    dispatch_event("irc.login", identity, nickdb[nickname])
-    # identity.avatars.add(ircuseer)
-    # nickdb[nickdb].identity = identity
-
-
+    for nickname, avatar in nickdb.iteritems():
+        if avatar.identity is not None:
+            continue
+        if not getattr(avatar, 'auth', None):
+            continue
+        qauth = avatar.auth
+        if qauth is not None:
+            print "calling getAuths view, asking for nick %s auth %s" % (nickname, repr(qauth))
+            result = yield getAuths(key=qauth)
+            if len(result['rows']) > 0:
+                docid = result['rows'][0]['id']
+                identity = Identity(str(docid))
+                identity.link(avatar)
+                dispatch_event("irc.login", identity, avatar)
