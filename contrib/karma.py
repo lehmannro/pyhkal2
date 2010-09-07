@@ -56,7 +56,10 @@ def karma_del(event, wort):
 @defer.inlineCallbacks
 def karma_say(event, wort):
     wort = wort.lower()
-    result = yield getKarma(key=wort)
+    try:
+        result = yield getKarma(key=wort)
+    except Error:
+        result = dict(rows=0)
     if result[u'rows']: # karma erhöhen
         value = result[u'rows'][0][u'value']
     else:
