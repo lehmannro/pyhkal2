@@ -36,3 +36,16 @@ class Davenport(paisley.CouchDB):
             self.addViews(doc, {by: dict(map=payload)})
             self.saveDoc(doc, docId=docname)
         self.openDoc(docname).addBoth(add_view)
+
+    def openView(self, dbName, docId, viewId, **kwargs):
+        """
+        Open a view of a document in a given database.
+        """
+        # paisley still queries old-style CouchDB URLs
+        # old: /DBNAME/_view/DOCUMENT/VIEW
+        # new: /DBNAME/_design/DOCUMENT/_view/VIEW (these work in 0.9 already)
+        uri = "/%s/_design/%s/_view/%s" % (dbName, docId, viewId)
+        if kwargs:
+            uri += "?%s" % (urlencode(kwargs),)
+        return self.get(uri
+            ).addCallback(self.parseResult)
