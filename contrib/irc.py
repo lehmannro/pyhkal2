@@ -166,7 +166,7 @@ class IRCClient(irc.IRCClient, object):
         irc.IRCClient.connectionMade(self)
         @hook("irc.send")
         def send(msg):
-            print "Sending %s" % (msg,)
+            print "Sending %r" % (msg,)
             self.sendLine(msg)
         self._send = send
 
