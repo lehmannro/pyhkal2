@@ -92,10 +92,6 @@ def chaos(service, name, script):
         return d
     return call
 
-@expose
-def send(service, message, dest=None):
-    service.dispatch_event('send', message)
-
 _none = object()
 @expose
 def remember(service, breadcrumbs, default=_none):
