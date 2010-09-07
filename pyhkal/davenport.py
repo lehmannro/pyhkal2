@@ -9,6 +9,7 @@ from twisted.web.client import HTTPClientFactory
 from twisted.python.failure import Failure
 import paisley
 from base64 import b64encode
+from urllib import urlencode
 
 class Davenport(paisley.CouchDB):
     def __init__(self, host, db, user, passwd, port=5984):
