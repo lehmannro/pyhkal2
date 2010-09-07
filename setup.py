@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
-#from setuptools import setup
+from setuptools import setup
 #import pyhkal
 
 setup(name='pyhkal',
 #      version=pyhkal.__version__,
-#      description="",
+      description="IRC bot with bling bling",
 #      long_description="",
       url="http://github.com/lehmannro/pyhkal2/",
 #      author="",
@@ -14,6 +13,14 @@ setup(name='pyhkal',
 #      license="",
       packages=['pyhkal', 'pyhkal.contrib', 'pyhkal.test', 'twisted.plugins'],
       package_dir={'pyhkal.contrib': 'contrib', 'pyhkal.test': 'test'},
+      install_requires=[
+          'twisted',
+          'paisley',
+          'pyopenssl',
+          'oauth',
+          'twittytwister',
+          'PyYAML',
+        ],
       classifiers=[
           'Development Status :: 3 - Alpha',
           'Topic :: Communications :: Chat :: Internet Relay Chat',
