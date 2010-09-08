@@ -30,7 +30,7 @@ pylint: install
 $(VIRTUALENV):
 	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
 install: $(VIRTUALENV) $(SOURCES)
-        echo -e "[build]\r\ncompiler = mingw32" > $(VIRTUALENV)\\pydistutils.cfg
+	echo -e "[build]\r\ncompiler = mingw32" > $(VIRTUALENV)/pydistutils.cfg
 	$(VIRTUAL)python setup.py $(INSTALLOPTS) install
 
 clean:
