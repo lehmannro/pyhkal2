@@ -15,7 +15,6 @@ getKarma = chaos("getKarma","""
     """
 )
 
-setKarma = chaos('setKarma',"")
 karmaspam = 600
 
 @defer.inlineCallbacks
