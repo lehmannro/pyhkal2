@@ -20,7 +20,8 @@ class Davenport(paisley.CouchDB):
         # paisley steals our headers so this is copypasta
         url = self.url_template % (uri,)
         kwargs["headers"] = {"Accept": "application/json",
-            "Authorization": self.auth}
+            "Authorization": self.auth,
+            "Content-Type": "application/json"}
         factory = HTTPClientFactory(url, **kwargs)
         from twisted.internet import reactor
         reactor.connectTCP(self.host, self.port, factory)
