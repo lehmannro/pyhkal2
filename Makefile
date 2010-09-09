@@ -5,32 +5,26 @@ VIRTUALENV = var
 
 SOURCES = $(wildcard pyhkal/*.py) $(wildcard contrib/*.py) $(wildcard bin/*) \
 		  setup.py
-ifdef WIN32
-	BIN = Scripts
-else
-	BIN = bin
-endif
-VIRTUAL = $(VIRTUALENV)/$(BIN)/
+VIRTUAL = . $(VIRTUALENV)/bin/activate &&
 
 .PHONY: run test pylint clean
 
 run: install
 	@echo "Running PyHKAL.."
-	$(VIRTUAL)twistd -n $(T) pyhkal config.yaml
+	$(VIRTUAL) twistd -n $(T) pyhkal config.yaml
 
 test: install
-	cd $(VIRTUALENV) && $(BIN)/trial pyhkal.test
+	$(VIRTUAL) cd $(VIRTUALENV) && trial pyhkal.test
 # trial runs pyhkal/ directory otherwise
 
 pylint: install
-	$(VIRTUAL)pip install pylint
-	cd $(VIRTUALENV) && $(BIN)/pylint $(PYLINTOPTIONS) pyhkal
+	$(VIRTUAL) pip install pylint
+	$(VIRTUAL) cd $(VIRTUALENV) && pylint $(PYLINTOPTIONS) pyhkal
 
-# line 2: pip on Windows installs twisted/ folder otherwise
 $(VIRTUALENV):
-	python -mvirtualenv --distribute --no-site-packages "$(VIRTUALENV)"
+	virtualenv --distribute --no-site-packages "$(VIRTUALENV)"
 install: $(VIRTUALENV) $(SOURCES)
-	$(VIRTUAL)python setup.py $(INSTALLOPTS) install
+	$(VIRTUAL) python setup.py $(INSTALLOPTS) install
 
 clean:
 	rm -rf "$(VIRTUALENV)"
