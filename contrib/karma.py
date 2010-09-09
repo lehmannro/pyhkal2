@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+TIMEOUT = 600
+
 __version__ = "0.1"
-#__requires__ = ["irc"]
 __author__ = "freddyb"
+__settings__ = dict(
+    karma=dict(
+        timeout="""Number of seconds an item is blocked for karma modifications
+            after a sucessful change. Defaults to %d.""" % TIMEOUT,
+    )
+)
 
 import datetime, time, re
 from twisted.web.error import Error
@@ -14,8 +21,6 @@ getKarma = chaos("getKarma","""
     } 
     """
 )
-
-karmaspam = 600
 
 @defer.inlineCallbacks
 def karma_edit(event, wort, delta):
@@ -28,6 +33,7 @@ def karma_edit(event, wort, delta):
     if result[u'rows']: # karma erhöhen
         entry = result[u'rows'][0][ u'doc'] #[u'id']
         #print "es gibt schon karma fuer", wort, entry
+        karmaspam = remember("karma timeout", TIMEOUT)
         if (time.time() - entry[u'updated_at']) > karmaspam:
             entry[u'value'] += delta
             entry[u'updated_at'] = time.time()      # printable wirds durch time.ctime(updated_at)
