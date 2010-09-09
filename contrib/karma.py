@@ -54,7 +54,7 @@ def karma_edit(event, wort, delta):
             event.reply("%s ist noch %s blockiert" % (wort, rest))
     # item not found;  create new
     else:
-        entry = dict(doctype='karma', name=wort, value=delta
+        entry = dict(doctype='karma', name=wort, value=delta,
                      updated_at=time.time(), created_at=time.time())
         yield davenport.saveDoc(entry) # XXX same qualifier as above
         event.reply("%s hat nun einen karmawert von %s" % (wort, delta))
