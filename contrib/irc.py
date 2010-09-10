@@ -463,7 +463,7 @@ class IRCClientFactory(protocol.ReconnectingClientFactory):
         p.factory = self
         p.nickname = str(remember("irc nick", DEFAULT_NICK))
         p.realname = str(remember("irc name", DEFAULT_NAME))
-        p.username = str(remember("irc user", None))
+        p.username = str(remember("irc user", DEFAULT_NICK))
         p.password = str(remember("irc key", None))
         p.prefix = str(remember("irc prefix", DEFAULT_PREFIX))
         p.channels = map(str, remember("irc channels", []))
