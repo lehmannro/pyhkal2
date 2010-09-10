@@ -59,15 +59,17 @@ def karma_edit(event, wort, delta):
         yield davenport.saveDoc(entry) # XXX same qualifier as above
         event.reply("%s hat nun einen karmawert von %s" % (wort, delta))
 
-@hook("message", r"(\S\S+)\+\+(?:\s|$)")
-def karma_add(event, wort):
-    return karma_edit(event, wort, +1)
 
-@hook("message", r"([\S]\S+)--(?:\s|$)")
-def karma_del(event, wort):
-    return karma_edit(event, wort, -1)
 
-@hook("message", r"(\S\S+)==(?:\s|$)")
+@hook("message", r".*(\S+(?:\+\+|--|==))(?:\s.*|$)")
+def karma_stack(event, wort):
+    karmas = collections.defaultdict(int)
+    for match in re.findall("(\S+(?:\+\+|--|==))(?:\s|$)", event.content):
+        karmas[match[:-2]] += ("--", "==", "++").index(match[-2:]) - 1
+    for key, val in karmas.iteritems():
+        (karma_say, partial(karma_edit, delta=+1), partial(karma_edit, delta=-1))[cmp(val, 0)](event, key)
+
+
 @defer.inlineCallbacks
 def karma_say(event, wort):
     wort = wort.lower()
