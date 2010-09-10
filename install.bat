@@ -22,5 +22,6 @@ rmdir /S /Q var\Lib\site-packages\pyhkal-0.0.0-py2.6.egg\pyhkal
 xcopy pyhkal var\Lib\site-packages\pyhkal-0.0.0-py2.6.egg\pyhkal /Q /Y /I
 xcopy contrib var\Lib\site-packages\pyhkal-0.0.0-py2.6.egg\pyhkal\contrib /Q /Y /I
 xcopy test var\Lib\site-packages\pyhkal-0.0.0-py2.6.egg\pyhkal\test /Q /Y /I
+python -mcompileall -q var\Lib\site-packages\pyhkal-0.0.0-py2.6.egg\pyhkal
 var\Scripts\python var\Scripts\twistd.py -n pyhkal config.yaml
 :end
