@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+import collections
+from functools import partial
+
 TIMEOUT = 600
 
 __version__ = "0.1"
