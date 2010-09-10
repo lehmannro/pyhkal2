@@ -3,9 +3,6 @@ Running PyHKAL requires a few steps that might not be obvious:
 1. Get Mingw32
    1. Google.
    2. Add <Mingw32 install path>\bin to %PATH%
-   3. Create 'pydistutils.cfg' in your Users or Documents and Settings directory (e.g. 'C:\Documents and Settings\<username>\') with the following content:
-[build]
-compiler = mingw32
 
 
 2. Get OpenSSL for Win32. 
@@ -13,5 +10,14 @@ compiler = mingw32
    2. Install OpenSSL for Win32 and add <OpenSLL install path>\bin to %PATH%
 
 
-3. Your done. Now, don't forget to use `make WIN32=1` instead of just `make`.
+3. Install CouchDB
+   1. http://wiki.apache.org/couchdb/Windows_binary_installer
+   2. create a database 'pyhkal'.
+   3. create an admin identity.
+
+
+4. Create a config.yaml (see example.yaml)
+
+
+5. Your done. Now, use 'install.bat' to compile the code and later 'install.bat run' to run the bot. Also 'install.bat clean' removes the virtual environment.
 
