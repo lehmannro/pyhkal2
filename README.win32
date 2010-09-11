@@ -1,23 +1,32 @@
-Running PyHKAL requires a few steps that might not be obvious:
+.. vim:ft=rst
 
-1. Get Mingw32
-   1. Google.
-   2. Add <Mingw32 install path>\bin to %PATH%
+Running PyHKAL on Windows requires a few steps that might not be obvious at
+first:
 
+#. Install Mingw32.
+#. Add ``<Mingw32 install path>\bin`` to your ``PATH`` `environment variable`_
+   (``%PATH%``).
+#. Install OpenSSL for Win32.
 
-2. Get OpenSSL for Win32. 
-   1. At the time of writing, http://www.slproweb.com/download/Win32OpenSSL-1_0_0a.exe is the latest version. Check http://www.slproweb.com/products/Win32OpenSSL.html for all available versions. You will need the package recommended for developers, i.e. no "Light" package.
-   2. Install OpenSSL for Win32 and add <OpenSLL install path>\bin to %PATH%
+   At the time of writing, 1.0_ is the latest version.  Check the `OpenSSL
+   Win32 Downloads`_ for all available versions.  You will need the package
+   recommended for developers, ie. no *Light* package.
+#. Add ``<OpenSSL install path>\bin`` to your ``PATH`` environment variable.
+#. Install CouchDB_.
+#. Your system is all set.  Now use ``install.bat`` to compile PyHKAL into a
+   `virtual environment`_  and ``install.bat run`` to run the service.
 
+   .. note:: You still need to configure your installation.
 
-3. Install CouchDB
-   1. http://wiki.apache.org/couchdb/Windows_binary_installer
-   2. create a database 'pyhkal'.
-   3. create an admin identity.
+.. hint:: ``install.bat clean`` removes the virtual environment.
 
-
-4. Create a config.yaml (see example.yaml)
-
-
-5. Your done. Now, use 'install.bat' to compile the code and later 'install.bat run' to run the bot. Also 'install.bat clean' removes the virtual environment.
-
+.. _environment variable:
+   http://docs.python.org/using/windows#excursus-setting-environment-variables
+.. _1.0:
+   http://www.slproweb.com/download/Win32OpenSSL-1_0_0a.exe
+.. _OpenSSL Win32 Downloads:
+   http://www.slproweb.com/products/Win32OpenSSL.html
+.. _CouchDB:
+   http://wiki.apache.org/couchdb/Windows_binary_installer
+.. _virtual environment:
+   http://pypi.python.org/pypi/virtualenv
