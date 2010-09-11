@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+from re import search
+
 __version__ = "0.1"
 __author__ = "crosbow"
 
 SATZ = []
-LASTAUTOR = ""
+AUTHOR = ['']
 CONTRIBUTION = {}
 
 """
@@ -30,19 +32,18 @@ class Event():
 class Pser():
     def __init__(self):
         self.nick = "peter"
-"""
 
+"""
 @register("satz")
 def processSatz(event):
-    global LASTAUTOR
+    global AUTHOR
     word = event.content.split(" ")
-    #print word
     if (word == ['']):
         if (SATZ == []):
             event.reply("Die letzten paar Woerter der Wortassoziationsgeschichte: <Erstes Wort vom neuen Satz ist gefragt! !Satz <Wort> zum hinschreiben.>")
         else:
             event.reply("Die letzten paar Woerter der Wortassoziationsgeschichte: %s" % (" ".join(SATZ[-11:])))
-    elif (LASTAUTOR != event.source.nick):
+    elif (AUTHOR[-1:][0] != event.source.nick):
         """
         komma syntax helper
          valid
@@ -65,22 +66,27 @@ def processSatz(event):
 
 @register("satzkill")
 def satzKill(event):
+    global SATZ
+    global AUTHOR
     if (SATZ != []):
-        if (LASTAUTOR == event.source.nick):
+        if (AUTHOR[-1:][0] == event.source.nick):
             CONTRIBUTION[event.source.nick] -= 1
+            event.reply("\"%s\" aus dem aus dem aktuellen Wortassoziationssatz geloescht." % SATZ[-1:][0])
             SATZ.pop()
-            event.reply("\"%s\" aus dem aus dem aktuellen Wortassoziationssatz geloescht." % SATZ[len(SATZ)-1])
+            if (SATZ[-1:][0][-1:] == ","):
+                SATZ[len(SATZ)-1] = SATZ[-1:][0][:-1]
+            AUTHOR.pop()
         else:
-            event.reply("Dieses Wort kann nur %s loeschen!" % LASTAUTHOR)
+            event.reply("Dieses Wort kann nur %s loeschen!" % AUTHOR[-1:][0])
     else:
         event.reply("Keine Worte vorhanden.")
 
 
 def satzAppend(event, word, komma = False):
     global SATZ
-    global LASTAUTOR
+    global AUTHOR
     global CONTRIBUTION
-    LASTAUTOR = event.source.nick
+    AUTHOR.append(event.source.nick)
     if (CONTRIBUTION.has_key(event.source.nick)):
         CONTRIBUTION[event.source.nick] += 1
     else:
@@ -90,37 +96,38 @@ def satzAppend(event, word, komma = False):
         if (SATZ[len(SATZ)-1][-1:] != ","):
             SATZ[len(SATZ)-1] = SATZ[-1:][0]+","
     SATZ.append(word)
-    if (word[-1:] in ".!?"):
+    event.source.message("\"%s\" zur Wortassoziationsreihe hinzugefuegt." % word)
+    if (search("^\w+(\.|!|\?)$", word)):
         satzForge(event)
 
 def satzForge(event):
     global SATZ
     global CONTRIBUTION
+    global AUTHOR
     event.reply(" ".join(SATZ))
     for x in CONTRIBUTION.items():
         event.reply("%s gab dem letzten Satz %i Woerter." % (x[0], x[1]))
 
     SATZ = []
     CONTRIBUTION = {}
-    LASTAUTHOR = ""
+    AUTHOR = []
 
 """
 #test for debug
 if __name__ == "__main__":
     event = Event()
     processSatz(event)
-    event.content = ""
+    event.content = "du"
     event.source.nick ="o"
     processSatz(event)
     event.content = "neger,"
-    event.source.nick ="peter"
+    event.source.nick ="peter2"
     processSatz(event)
     event.content = ", nicht"
     event.source.nick ="p"
     processSatz(event)
-    #satzKill(event)
+    satzKill(event)
     event.content = "toll."
     event.source.nick ="m"
     processSatz(event)
-    print SATZ
 """
