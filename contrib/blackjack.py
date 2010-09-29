@@ -22,7 +22,7 @@ MIN_PLAYERS = remember('blackjack min_players', 2)
 # is satisfied
 WAIT_FOR = remember('blackjack wait_for', 10) 
 
-assert(WAIT_FOR < 60*60*24, 'Due to datetime.timedelta\'s incompetence and maybe just a little bit of lazyness on my part, this has to be enforced.')
+assert WAIT_FOR < 60*60*24, 'Due to datetime.timedelta\'s incompetence and maybe just a little bit of lazyness on my part, this has to be enforced.'
 
 wait_for_td = datetime.timedelta(0, WAIT_FOR)
 
@@ -135,6 +135,7 @@ def init(bj):
                 'players': {}, 
                 'dealer': None,
                 'rdy_players': [],
+                'standing': [],
                 'last_activity': None, # start in last_activity + WAIT_FOR seconds
                 'reminder': None,
                 'starter': None,
@@ -161,7 +162,7 @@ def start(target):
 
     if scheduled_start <= now:
         bj['status'] = 'running'
-        if bj['reminder']:
+        if bj['reminder'] and bj['reminder'].active():
             bj['reminder'].cancel()
         target.message('It\'s time for blackjack!')
         initial_deal(target)
@@ -171,6 +172,8 @@ def start(target):
         
 def initial_deal(target):
     bj = target.blackjack
+
+    # misc
 
     # deal to self
     c1 = bj['deck'].pop()
@@ -189,7 +192,7 @@ def initial_deal(target):
 
 
 def stop(target):
-    target.message('Time\'s up, let\'s see what he have here..')
+    target.message('Time\'s up or everbody\'s busted. Let\'s see what he have here..')
     bj = target.blackjack
 
     dealer = bj['dealer']
@@ -211,7 +214,7 @@ def stop(target):
     for player in valid: 
         target.message('%s: %s (%s)' % (player.getName(), player.calcPoints(), player.hand))
     if busted:
-        target.message('Busted: %s' % ', '.join(['%s: (%s) %s' % (player.getName(), player.calcPoints(), player.hand) for player in busted]))
+        target.message('Busted: %s' % '; '.join(['%s: (%s) %s' % (player.getName(), player.calcPoints(), player.hand) for player in busted]))
 
     bj['status'] = 'over'
 
@@ -259,7 +262,10 @@ def join(event):
             event.source.message('You have joined the game.')
     elif hasattr(event.target, 'blackjack') \
             and event.target.blackjack['status'] == 'running':
-        event.source.message('A game of blackjack is running atm. Come back soon!')
+        if event.source in event.target.blackjack['players'].iterkeys():
+            event.source.message('You are already playing blackjack.')
+        else:
+            event.source.message('A game of blackjack is running atm. Come back soon!')
     else:
         bj = {}
         init(bj)
@@ -274,7 +280,8 @@ def join(event):
     bj = event.target.blackjack
     if len(bj['players']) == MIN_PLAYERS:
         if bj['starter']:
-            bj['starter'].cancel()
+            if bj['starter'].active():
+                bj['starter'].cancel()
         bj['starter'] = reactor.callLater(wait_for_td.seconds, start, event.target)
 
 def rdy(event):
@@ -284,6 +291,7 @@ def rdy(event):
             if event.source in bj['players'].iterkeys():
                 if event.source not in bj['rdy_players']:
                     bj['rdy_players'].append(event.source)
+                    event.source.message('You have voted to start the game as soon as there are enough players.')
                     if len(bj['rdy_players']) == len(bj['players']):
                         bj['starter'].reset(0)
 
@@ -293,19 +301,30 @@ def stand(event):
         if bj['status'] == 'running':
             if event.source in bj['players'].iterkeys():
                 event.source.message('You stand.')
+                if not event.source in bj['standing']:
+                    bj['standing'].append(event.source)
+                    if len(bj['standing']) == len(bj['players']):
+                        bj['next'].reset(0)
 
 def hit(event):
     if hasattr(event.target, 'blackjack'):
         bj = event.target.blackjack
         if bj['status'] == 'running':
             if event.source in bj['players'].iterkeys():
-                player = bj['players'][event.source]
-                card = bj['deck'].pop()
-                player.hand.cards.append(card)
-                event.source.message('Your hand is now %s (%s).' % (player.hand, player.calcPoints()))
-                if player.calcPoints() > 21:
-                    event.source.message('You are busted!')
-                bj['next'].reset(TIMEOUT)
+                if event.source in bj['standing']:
+                    event.source.message('You decided to stand, idiot! Or you might be busted. I dunno!')
+                else:
+                    player = bj['players'][event.source]
+                    card = bj['deck'].pop()
+                    player.hand.cards.append(card)
+                    event.source.message('Your hand is now %s (%s).' % (player.hand, player.calcPoints()))
+                    if player.calcPoints() > 21:
+                        event.source.message('You are busted!')
+                        bj['standing'].append(event.source)
+                        if len(bj['standing']) == len(bj['players']):
+                            bj['next'].reset(0)
+                    else:
+                        bj['next'].reset(TIMEOUT)
 
 def leave(event):
     if hasattr(event.target, 'blackjack'):
