@@ -1,7 +1,7 @@
 var/
 dist/
 build/
-pyhkal.egg-info/
+PyHKAL.egg-info/
 twisted/plugins/dropin.cache
 MANIFEST
 pip-log.txt

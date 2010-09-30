@@ -28,5 +28,5 @@ install: $(VIRTUALENV) $(SOURCES)
 
 clean:
 	rm -rf "$(VIRTUALENV)"
-	rm -rf build/ dist/
+	rm -rf build/ dist/ PyHKAL.egg-info/
 	rm -f pip-log.txt MANIFEST twistd.pid

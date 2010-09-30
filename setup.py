@@ -3,7 +3,7 @@
 from setuptools import setup
 #import pyhkal
 
-setup(name='pyhkal',
+setup(name='PyHKAL',
 #      version=pyhkal.__version__,
       description="IRC bot with bling bling",
 #      long_description="",
