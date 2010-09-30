@@ -11,7 +11,7 @@ setup(name='PyHKAL',
 #      author="",
 #      author_email="",
 #      license="",
-      packages=['pyhkal', 'pyhkal.contrib', 'pyhkal.test', 'twisted.plugins'],
+      packages=['pyhkal', 'pyhkal.contrib', 'pyhkal.test'],
       package_dir={'pyhkal.contrib': 'contrib', 'pyhkal.test': 'test'},
       install_requires=[
           'twisted',
