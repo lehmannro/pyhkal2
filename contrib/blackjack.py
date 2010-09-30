@@ -158,9 +158,8 @@ def start(target):
     now = datetime.datetime.now()
 
     if len(bj['players']) < MIN_PLAYERS:
-        return
-
-    if scheduled_start <= now:
+        bj['starter'] = reactor.callLater((scheduled_start - now).seconds, start, target)
+    elif (scheduled_start <= now) or (len(bj['rdy_players']) == len(bj['players'])):
         bj['status'] = 'running'
         if bj['reminder'] and bj['reminder'].active():
             bj['reminder'].cancel()
@@ -178,7 +177,7 @@ def initial_deal(target):
     # deal to self
     c1 = bj['deck'].pop()
     bj['dealer'] = Dealer(DealerHand([c1]))
-    target.message('Dealer draws: %s' % c1)
+    #target.message('Dealer draws: %s' % c1)
 
     # deal to players
     for avatar, player  in bj['players'].iteritems():
@@ -201,7 +200,7 @@ def stop(target):
         card = bj['deck'].pop()
         dealer.hand.cards.append(card)
         if dealer.calcPoints() > 21:
-            target.message('The dealer is busted.')
+            #target.message('The dealer is busted.')
             break
 
     all_players = bj['players'].values()
@@ -211,10 +210,12 @@ def stop(target):
     valid.sort(lambda x,y: cmp(y.calcPoints(), x.calcPoints()))
     busted.sort(lambda x,y: cmp(y.calcPoints(), x.calcPoints()))
 
-    for player in valid: 
-        target.message('%s: %s (%s)' % (player.getName(), player.calcPoints(), player.hand))
+    if valid:
+        highest = valid[0].calcPoints()
+        for player in valid: 
+            target.message('%s: %s (%s) [%s]' % (player.getName(), player.calcPoints(), player.hand, 'Winner' if player.calcPoints() == highest else 'Loser'))
     if busted:
-        target.message('Busted: %s' % '; '.join(['%s: (%s) %s' % (player.getName(), player.calcPoints(), player.hand) for player in busted]))
+        target.message('Busted: %s' % ', '.join(['%s: %s (%s) [Loser]' % (player.getName(), player.calcPoints(), player.hand) for player in busted]))
 
     bj['status'] = 'over'
 
@@ -239,18 +240,22 @@ def remind(target):
 def handler(event):
     args = event.content.split()
     if args:
-        if args[0] == 'leave':
-            leave(event)
-        elif args[0] in ('ready', 'rdy'):
-            rdy(event)
-        elif args[0] in ('hit', 'card', 'carte', 'draw'):
-            hit(event)
-        elif args[0] in ('stand', 'pass'):
-            stand(event)
+        while args:
+            if args[0] == 'leave':
+                leave(event)
+            elif args[0] == 'join':
+                join(event)
+            elif args[0] in ('ready', 'rdy'):
+                rdy(event)
+            elif args[0] in ('hit', 'card', 'carte', 'draw'):
+                hit(event)
+            elif args[0] in ('stand', 'pass'):
+                stand(event)
+            args.pop(0)
     else:
         join(event)
 
-def join(event):
+def join(event, is_rdy=False):
     if hasattr(event.target, 'blackjack') \
             and event.target.blackjack['status'] == 'new':
         bj = event.target.blackjack
@@ -259,7 +264,11 @@ def join(event):
             event.source.message('You are already in the game, idiot!')
         else:
             bj['players'][event.source] = Player(event.source)
-            event.source.message('You have joined the game.')
+            if not is_rdy:
+                event.source.message('You have joined the game.')
+            else:
+                event.source.message('You have joined the game and voted to start the game as soon as possible.')
+            bj['last_activity'] = datetime.datetime.now()
     elif hasattr(event.target, 'blackjack') \
             and event.target.blackjack['status'] == 'running':
         if event.source in event.target.blackjack['players'].iterkeys():
@@ -274,26 +283,38 @@ def join(event):
         if REMIND:
             bj['reminder'] = reactor.callLater(REMIND_PERIOD, remind, event.target)
         event.reply('A new game of blackjack has been started.')
-        event.source.message('You have joined the game.')
+        if not is_rdy:
+            event.source.message('You have joined the game.')
+        else:
+            event.source.message('You have joined the game and voted to start the game as soon as possible.')
+        bj['last_activity'] = datetime.datetime.now()
 
     # event.target.blackjack must exist now
     bj = event.target.blackjack
-    if len(bj['players']) == MIN_PLAYERS:
+    if len(bj['players']) >= MIN_PLAYERS:
         if bj['starter']:
-            if bj['starter'].active():
-                bj['starter'].cancel()
-        bj['starter'] = reactor.callLater(wait_for_td.seconds, start, event.target)
+            bj['starter'].reset(0)
+        else:
+            bj['starter'] = reactor.callLater(wait_for_td.seconds, start, event.target)
 
-def rdy(event):
+def rdy(event, is_join=False):
     if hasattr(event.target, 'blackjack'):
         bj = event.target.blackjack
         if bj['status'] == 'new':
             if event.source in bj['players'].iterkeys():
                 if event.source not in bj['rdy_players']:
                     bj['rdy_players'].append(event.source)
-                    event.source.message('You have voted to start the game as soon as there are enough players.')
-                    if len(bj['rdy_players']) == len(bj['players']):
-                        bj['starter'].reset(0)
+                    if not is_join:
+                        event.source.message('You have voted to start the game as soon as there are enough players.')
+                    if len(bj['players']) >= MIN_PLAYERS:
+                        if len(bj['rdy_players']) == len(bj['players']):
+                            bj['starter'].reset(0)
+            else:
+                join(event, is_rdy=True)
+                rdy(event, is_join=True)
+    else:
+        join(event, is_rdy=True)
+        rdy(event, is_join=True)
 
 def stand(event):
     if hasattr(event.target, 'blackjack'):
@@ -340,13 +361,14 @@ def leave(event):
             if bj['status'] == 'running':
                 event.reply('%s leaves. What a sissy!' % event.source.nick)
                 event.source.message('You have left the game.')
-
-            if len(bj['players']) == 0:
-                event.reply('All players left the game. Pussies!')
-                for job in jobs: 
-                    if bj[job]:
-                        bj[job].cancel() 
-                        bj[job] = None
+            if not bj['status'] == 'over':
+                if len(bj['players']) == 0:
+                    event.reply('All players left the game. Pussies!')
+                    for job in jobs: 
+                        if bj[job]:
+                            if bj[job].active:
+                                bj[job].cancel() 
+                            bj[job] = None
 
 
 
