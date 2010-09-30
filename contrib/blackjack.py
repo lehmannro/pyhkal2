@@ -312,6 +312,9 @@ def rdy(event, is_join=False):
             else:
                 join(event, is_rdy=True)
                 rdy(event, is_join=True)
+        elif bj['status'] == 'over':
+            join(event, is_rdy=True)
+            rdy(event, is_join=True)
     else:
         join(event, is_rdy=True)
         rdy(event, is_join=True)
