@@ -60,35 +60,37 @@ class MultitonMeta(type):
             cls.instances[unique] = o
             return o
 
-class Identity(object):
-    """
-    Identities are abstract persons which persist throughout several sessions.
-    They can be associated to several avatars.
+def IdentityProxy(service, docid):
+    class Identity(object):
+        """
+        Identities are abstract persons which persist throughout several sessions.
+        They can be associated to several avatars.
 
-    The `link` method adds an avatar to its available representation.
+        The `link` method adds an avatar to its available representation.
 
-    Avatars are automatically removed when all references are lost due the
-    reference's weakness.
+        Avatars are automatically removed when all references are lost due the
+        reference's weakness.
 
-    """
-    __metaclass__ = MultitonMeta
+        """
+        __metaclass__ = MultitonMeta
 
-    def __init__(self, service, docid):
-        self.docid = docid.encode('latin-1')
-        self.avatars = WeakSet()
-        self.service = service
+        def __init__(self, docid):
+            self.docid = docid.encode('latin-1')
+            self.avatars = WeakSet()
+            self.service = service # closure
 
-    def link(self, avatar):
-        if avatar.identity not in (None, self):
-            raise ValueError("double link from %r to %r and %r" %
-                    (avatar, self, avatar.identity))
-        self.service.dispatch_event("login", self, avatar)
-        self.avatars.add(avatar)
-        avatar.identity = self
-        return self
+        def link(self, avatar):
+            if avatar.identity not in (None, self):
+                raise ValueError("double link from %r to %r and %r" %
+                        (avatar, self, avatar.identity))
+            self.service.dispatch_event("login", self, avatar)
+            self.avatars.add(avatar)
+            avatar.identity = self
+            return self
 
-    def fetch(self):
-        return self.service.davenport.openDoc(self.docid)
+        def fetch(self):
+            return self.service.davenport.openDoc(self.docid)
+    return Identity(docid)
 
 class Event(object):
     def __init__(self, target, source, content, timestamp=None):

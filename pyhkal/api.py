@@ -35,7 +35,7 @@ def expose(item_or_name, item=None, static=False):
     else:
         dest[item_or_name.__name__] = item_or_name
 
-expose(shrink.Identity)
+expose('Identity', shrink.IdentityProxy)
 expose(shrink.Avatar, static=True)
 expose(shrink.Event, static=True)
 expose(shrink.Location, static=True)
