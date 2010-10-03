@@ -50,7 +50,7 @@ def fetchTikkles(event):
     for entry in entries[u'rows']:
         senderDoc = davenport.openDoc(str(entry[u'value'][0]))
         senderDoc = yield senderDoc
-        mtime = datetime.datetime.fromtimestamp(entry[u'value'][2]).strftime("[%d.%m|%H:%M]")
+        mtime = datetime.datetime.fromtimestamp(entry[u'value'][3]).strftime("[%d.%m|%H:%M]")
         event.source.message(mtime+" <"+str(senderDoc[u'name']+"> "+entry[u'value'][1]))
         davenport.deleteDoc(str(entry[u'id']), str(entry[u'value'][2]))
 
@@ -65,6 +65,7 @@ def sendMsg(event):
         tikkle = {}
         users = yield tikkleIdentityView()
         for user in users[u'rows']:
+            print repr(user)
             if (str(user[u'value']) == msg[2]):
                 tikkle["time"] = int(datetime.datetime.now().strftime("%s"))
                 tikkle["from"] = event.source.identity.docid
@@ -72,12 +73,14 @@ def sendMsg(event):
                 tikkle["msg"] = " ".join(msg[3:])
                 tikkle["doctype"] = "tikkle"
                 davenport.saveDoc(tikkle)
-                print "[TIKKLE] SENT MESSAGE: "+str(tikkle)
-                event.reply("Brief: "+str(tikkle))
+                #print "[TIKKLE] SENT MESSAGE: "+str(tikkle)
+                #event.reply("Brief: "+str(tikkle))
                 sent = True
                 break
         if sent:
             event.source.message("Message successfully sent!")
+        else:
+            event.source.message("Message could not be sent!")
 
 def hasIdentity(event):
     return event.source.identity is not None
