@@ -65,7 +65,6 @@ def sendMsg(event):
         tikkle = {}
         users = yield tikkleIdentityView()
         for user in users[u'rows']:
-            print repr(user)
             if (str(user[u'value']) == msg[2]):
                 tikkle["time"] = int(datetime.datetime.now().strftime("%s"))
                 tikkle["from"] = event.source.identity.docid
