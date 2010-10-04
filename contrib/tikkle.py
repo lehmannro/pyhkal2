@@ -36,10 +36,11 @@ def startTheTikkleFun(event):
     if (hasIdentity(event)):
         d = davenport.openDoc(str(event.source.identity.docid))
         doc = yield d
-        loginRE =  re.compile(doc["tikkle"]["login"])
-        if (loginRE.match(event.content) != None):
-            event.source.message("User recognized - Digests!")
-            doStuff(event)
+        if "tikkle" in doc:
+            loginRE =  re.compile(doc["tikkle"]["login"])
+            if (loginRE.match(event.content) != None):
+                event.source.message("User recognized - Digests!")
+                doStuff(event)
 
 def doStuff(event):
     fetchTikkles(event)
