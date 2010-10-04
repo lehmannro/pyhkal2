@@ -54,6 +54,7 @@ class IRCUser(Avatar): # TODO: Alle attribute als defer ermöglichen, falls wir 
         for k,v in kwargs.iteritems():
             setattr(self, k, v)
         Avatar.__init__(self, self.nick)
+        self.name = self.nick # our conventions demand this
 
     @staticmethod
     def fromhostmask(hostmask): # Fall 1: IRCUser(hostmask="nick!ident@host") und er hat schonmal 3 Werte
