@@ -40,8 +40,11 @@ def trigger(event):
 @register('factoidadd')
 def factoid_add(event):
     lexer = shlex.shlex(event.content)
+    # set the quoting character to slash and retrieve the first word
+    # thus ``/foo bar/ baz frob'' produces "foo bar" for its trigger
     lexer.quotes = '/'
     trigger = lexer.get_token()
+    # retrieve all what's left of the payload
     reply = lexer.instream.read().lstrip()
     davenport.saveDoc(dict(doctype='factoid', trigger=trigger, reply=reply))
     cache(trigger, reply)
