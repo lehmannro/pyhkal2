@@ -9,7 +9,7 @@ __settings__ = dict(
 )
 
 get_factoids = chaos("get_factoids", """
-    if (doc.type = "factoid") {
+    if (doc.doctype == "factoid") {
         emit(doc.trigger, doc.reply);
     }
 """)
