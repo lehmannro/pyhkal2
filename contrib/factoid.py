@@ -35,6 +35,7 @@ def trigger(event):
         if not matches:
             return
         match = random.choice(matches)
+        match = match.replace('$who', event.source.name)
         event.reply(match)
 
 @register('factoidadd')
