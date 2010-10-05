@@ -38,7 +38,7 @@ def trigger(event):
         match = regexp.sub(reply, regexp.search(event.content).group(0))
         match = match.replace('$who', event.source.name)
         if '$someone' in match and hasattr(event.target, nicklist):
-            match = match.replace('$someone', random.choice(event.target.nicklist)
+            match = match.replace('$someone', random.choice(event.target.nicklist))
         if match.startswith("A:"):
             if hasattr(event.target, 'action'):
                 event.target.action(match[2:])
