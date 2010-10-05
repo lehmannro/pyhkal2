@@ -30,11 +30,12 @@ def start():
 def trigger(event):
     p = remember('factoidprobability', DEFAULT_PROBABILITY)
     if random.random() * 100 <= p:
-        matches = [reply for regexp, reply in factoids.iteritems()
+        matches = [(regexp, reply) for regexp, reply in factoids.iteritems()
                    if regexp.search(event.content)]
         if not matches:
             return
-        match = random.choice(matches)
+        regexp, reply = random.choice(matches)
+        match = regexp.sub(reply, regexp.search(event.content).group(0))
         match = match.replace('$who', event.source.name)
         event.reply(match)
 
