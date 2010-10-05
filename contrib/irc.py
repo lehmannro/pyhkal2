@@ -5,7 +5,7 @@
 __version__ = 0.9
 __author__ = "freddyb"
 
-from twisted.internet import protocol
+from twisted.internet import protocol, task
 from twisted.words.protocols import irc
 from itertools import cycle
 from types import MethodType
@@ -18,6 +18,7 @@ DEFAULT_NICK = "pyhkal"
 DEFAULT_NAME = "PyHKAL 2.0"
 DEFAULT_PREFIX = "!"
 DEFAULT_ENCODINGS = ['utf-8', 'iso-8859-15']
+DEFAULT_QUEUE_DELAY = 0.753
 
 __settings__ = dict(
     irc = dict(
@@ -129,13 +130,13 @@ class IRCQuery(Location):
 def send_message(dst, msg):
     maxlen = 400
     for line in wrap(msg, maxlen):
-        dispatch_event("irc.send", "PRIVMSG %s :%s" % (dst, msg))
+        dispatch_event("irc.sendq", "PRIVMSG %s :%s" % (dst, line))
 
 @hook("irc.sendnotice")
 def send_notice(dst, msg):
     maxlen = 400
     for line in wrap(msg, maxlen):
-        dispatch_event("irc.send", "NOTICE %s :%s" % (dst, msg))
+        dispatch_event("irc.sendq", "NOTICE %s :%s" % (dst, line))
 
 @hook("irc.sendaction")
 def send_action(dst, msg):
@@ -145,6 +146,22 @@ def send_action(dst, msg):
 def send_ctcp(dst, msg):
     dispatch_event("irc.sendmessage", dst, "\x01%s\x01" % (msg))
 
+
+def emptyQueue():
+    if len(sendQueue) > 0:
+        dispatch_event("irc.send", sendQueue.pop(0))
+    else:
+        queueTask.stop()
+
+sendQueue = []
+queueTask = task.LoopingCall(emptyQueue)
+
+@hook("irc.sendq")
+def send_q(msg):
+    sendQueue.append(msg)
+    if not queueTask.running:
+        queueTask.start(DEFAULT_QUEUE_DELAY, now=False)
+    #XXX else: ...increase delay maybe?
 
 class IRCClient(irc.IRCClient, object):
     def __init__(self):
