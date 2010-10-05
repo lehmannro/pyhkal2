@@ -2,7 +2,7 @@ import re
 import random
 import shlex
 
-DEFAULT_PROBABILITY = 5
+DEFAULT_PROBABILITY = 50
 
 __settings__ = dict(
     factoidprobability="""Chance to trigger a factoid.""",
@@ -36,7 +36,13 @@ def trigger(event):
             return
         match = random.choice(matches)
         match = match.replace('$who', event.source.name)
-        event.reply(match)
+        if match.startswith("A:"):
+            if hasattr(event.target, 'action'):
+                event.target.action(match[2:])
+            else:
+                event.reply(match[2:])
+        else:
+            event.reply(match)
 
 @register('factoidadd')
 def factoid_add(event):
