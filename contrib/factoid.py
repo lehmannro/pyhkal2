@@ -15,8 +15,8 @@ get_factoids = chaos("get_factoids", """
 """)
 
 factoids = {}
-def cache(trigger, reply):
-    factoids[re.compile(trigger, re.IGNORECASE | re.UNICODE)] = reply
+def cache(id_, trigger, reply):
+    factoids[id_] = (re.compile(trigger, re.IGNORECASE | re.UNICODE), reply)
 
 @hook('startup')
 @defer.inlineCallbacks
@@ -24,13 +24,13 @@ def start():
     global factoids
     docs = yield get_factoids()
     for doc in docs['rows']:
-        cache(doc['key'], doc['value'])
+        cache(doc['id'], doc['key'], doc['value'])
 
 @hook('message')
 def trigger(event):
     p = remember('factoidprobability', DEFAULT_PROBABILITY)
     if random.random() * 100 <= p:
-        matches = [(regexp, reply) for regexp, reply in factoids.iteritems()
+        matches = [(regexp, reply) for regexp, reply in factoids.itervalues()
                    if regexp.search(event.content)]
         if not matches:
             return
@@ -40,6 +40,7 @@ def trigger(event):
         event.reply(match)
 
 @register('factoidadd')
+@defer.inlineCallbacks
 def factoid_add(event):
     lexer = shlex.shlex(event.content)
     # set the quoting character to slash and retrieve the first word
@@ -48,5 +49,6 @@ def factoid_add(event):
     trigger = lexer.get_token()
     # retrieve all what's left of the payload
     reply = lexer.instream.read().lstrip()
-    davenport.saveDoc(dict(doctype='factoid', trigger=trigger, reply=reply))
-    cache(trigger, reply)
+    factoid = yield davenport.saveDoc(
+                    dict(doctype='factoid', trigger=trigger, reply=reply))
+    cache(factoid['id'], trigger, reply)
