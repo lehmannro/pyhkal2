@@ -58,3 +58,14 @@ def factoid_add(event):
     factoid = yield davenport.saveDoc(dict(doctype='factoid',
         trigger=trigger, reply=reply, creator=event.source.name))
     cache(factoid['id'], trigger, reply)
+
+@register('factoidfind')
+def find_by_reply(event):
+    matches = ["(..%s) /%s/ -> '%s'" % (_id[-4:], rx.pattern, rep) for _id, (rx, rep) in factoids.iteritems() if event.content in rep]
+    event.reply(', '.join(matches))
+
+@register('factoidget')
+def get_by_regex(event):
+    matches = ["(..%s) /%s/ -> '%s'" % (_id[-4:], rx.pattern, rep) for _id, (rx, rep) in factoids.iteritems() if event.content in rx.pattern]
+    event.reply(', '.join(matches))
+
