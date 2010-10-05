@@ -111,6 +111,8 @@ class IRCChannel(Location):
 
     def message(self, msg):
         dispatch_event("irc.sendmessage", self.name, msg)
+    def action(self, msg):
+        dispatch_event("irc.sendaction", self.name, msg)
 
 class IRCMessage(Event):
     """Message transmitted via IRC protocol."""
@@ -131,6 +133,14 @@ def send_message(dst, msg):
 def send_notice(dst, msg):
     # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
     dispatch_event("irc.send", "NOTICE %s :%s" % (dst, msg))
+
+@hook("irc.sendaction")
+def send_action(dst, msg):
+    dispatch_event("irc.sendctcp", dst, "ACTION "+msg)
+
+@hook("irc.sendctcp")
+def send_ctcp(dst, msg):
+    dispatch_event("irc.sendmessage", dst, "\x01%s\x01" % (msg))
 
 
 class IRCClient(irc.IRCClient, object):
