@@ -49,6 +49,6 @@ def factoid_add(event):
     trigger = lexer.get_token()
     # retrieve all what's left of the payload
     reply = lexer.instream.read().lstrip()
-    factoid = yield davenport.saveDoc(
-                    dict(doctype='factoid', trigger=trigger, reply=reply))
+    factoid = yield davenport.saveDoc(dict(doctype='factoid',
+        trigger=trigger, reply=reply, creator=event.source.name))
     cache(factoid['id'], trigger, reply)
