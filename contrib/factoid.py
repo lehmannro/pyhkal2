@@ -2,7 +2,7 @@ import re
 import random
 import shlex
 
-DEFAULT_PROBABILITY = 50
+DEFAULT_PROBABILITY = 5
 
 __settings__ = dict(
     factoidprobability="""Chance to trigger a factoid.""",
