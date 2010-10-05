@@ -11,6 +11,7 @@ from itertools import cycle
 from types import MethodType
 from time import time # for channel timestamp
 import re # re.compile for stripping color-codes
+from textwrap import wrap
 
 DEFAULT_PORT = 6667
 DEFAULT_NICK = "pyhkal"
@@ -126,13 +127,15 @@ class IRCQuery(Location):
 
 @hook("irc.sendmessage")
 def send_message(dst, msg):
-    # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
-    dispatch_event("irc.send", "PRIVMSG %s :%s" % (dst, msg))
+    maxlen = 400
+    for line in wrap(msg, maxlen):
+        dispatch_event("irc.send", "PRIVMSG %s :%s" % (dst, msg))
 
 @hook("irc.sendnotice")
 def send_notice(dst, msg):
-    # FIXME wrap around maximum length, is there something in twisted that will help us? ;)
-    dispatch_event("irc.send", "NOTICE %s :%s" % (dst, msg))
+    maxlen = 400
+    for line in wrap(msg, maxlen):
+        dispatch_event("irc.send", "NOTICE %s :%s" % (dst, msg))
 
 @hook("irc.sendaction")
 def send_action(dst, msg):
