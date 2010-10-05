@@ -68,6 +68,9 @@ class IRCUser(Avatar): # TODO: Alle attribute als defer ermöglichen, falls wir 
     def message(self, text):
         dispatch_event("irc.sendnotice", self.nick, text)
 
+    def action(self, msg):
+        dispatch_event("irc.sendaction", self.nick, msg)
+
     def __str__(self):
         r=''
         if self.nick and self.ident and self.host:
