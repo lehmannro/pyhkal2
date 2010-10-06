@@ -5,7 +5,7 @@
 __version__ = 0.9
 __author__ = "freddyb"
 
-from twisted.internet import protocol, task
+from twisted.internet import protocol, reactor
 from twisted.words.protocols import irc
 from itertools import cycle
 from types import MethodType
@@ -133,13 +133,13 @@ class IRCQuery(Location):
 def send_message(dst, msg):
     maxlen = 400
     for line in wrap(msg, maxlen):
-        dispatch_event("irc.sendq", "PRIVMSG %s :%s" % (dst, line))
+        dispatch_event("irc.send", "PRIVMSG %s :%s" % (dst, line))
 
 @hook("irc.sendnotice")
 def send_notice(dst, msg):
     maxlen = 400
     for line in wrap(msg, maxlen):
-        dispatch_event("irc.sendq", "NOTICE %s :%s" % (dst, line))
+        dispatch_event("irc.send", "NOTICE %s :%s" % (dst, line))
 
 @hook("irc.sendaction")
 def send_action(dst, msg):
@@ -149,22 +149,6 @@ def send_action(dst, msg):
 def send_ctcp(dst, msg):
     dispatch_event("irc.sendmessage", dst, "\x01%s\x01" % (msg))
 
-
-def emptyQueue():
-    if len(sendQueue) > 0:
-        dispatch_event("irc.send", sendQueue.pop(0))
-    else:
-        queueTask.stop()
-
-sendQueue = []
-queueTask = task.LoopingCall(emptyQueue)
-
-@hook("irc.sendq")
-def send_q(msg):
-    sendQueue.append(msg)
-    if not queueTask.running:
-        queueTask.start(DEFAULT_QUEUE_DELAY, now=False)
-    #XXX else: ...increase delay maybe?
 
 class IRCClient(irc.IRCClient, object):
     def __init__(self):
@@ -187,6 +171,8 @@ class IRCClient(irc.IRCClient, object):
         self.whoamount = 0
         self.nickdb = {} # { 'ChosenOne' : <IRCUser Object>}, ... } 
         self.chandb = {} # { '#ich-sucke' : <IRCChannel Object>, ... }
+        self.lineRate = 0 # Enable queueing
+        self.lineCount = 0 # Amount of lines sent within the last N seconds
 
     def UpdateNickDB(self, resultlist):
         for user in resultlist:
@@ -200,9 +186,26 @@ class IRCClient(irc.IRCClient, object):
         irc.IRCClient.connectionMade(self)
         @hook("irc.send")
         def send(msg):
-            print "Sending %r" % (msg,)
+            self.lineCount += 1
+            if self.lineCount >= 3:
+                self.lineRate += 1
+            print "Sending %r" % (msg,) # not really, we're just enqueueing :)
             self.sendLine(msg)
         self._send = send
+
+    def _sendLine(self):
+        # irc.IRCClient._sendLine(self) + selfqueue stuff
+        if self._queue:
+             self._reallySendLine(self._queue.pop(0))
+             self._queueEmptying = reactor.callLater(self.lineRate,
+                                                     self._sendLine)
+        else:
+            self._queueEmptying = None
+            reactor.callLater(10, self.stopQueue)
+
+    def stopQueue(self):
+        self.lineCount = 0
+        self.lineRate = 0
 
     def kickedFrom(self, channel, kicker, message):
         irc.IRCClient.kickedFrom(self, channel, kicker, message)
