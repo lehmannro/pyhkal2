@@ -9,6 +9,7 @@ from datetime import datetime
 
 
 REFRESHDELAY = remember("twitter refresh", 60)
+REFRESHFOLLOWERS = remember("twitter refresh_followers", 60*60)
 WRITE_SINCE_ID = remember("twitter write_since_id", True)
 
 """
@@ -84,13 +85,15 @@ class TweetEvent(Event):
         Event.__init__(self, target, source, content, timestamp)
         self.id = id
     def reply(self, msg):
-        return self.target.reply("@%s %s" % (self.source.name, msg))
+        return self.target.reply("%s %s" % (self.source.dec_name(), msg))
 
 
 class Tweet(Location):
     def __init__(self, id):
         Location.__init__(self)
         self.id = id
+    def __iter__(self):
+        return iter(Followers.followers)
 
 class PublicTweet(Tweet):
     def message(self, msg, params=None):
@@ -135,6 +138,10 @@ class User(Avatar):
         self.identity_deferred = self.identify()
         self.users.add(self)
 
+    @property
+    def dec_name(self):
+        return '@%s' % self.nick
+    
     @defer.inlineCallbacks
     def identify(self):
         res = yield twitterIdentityView(key=self.name)
@@ -148,6 +155,8 @@ class User(Avatar):
         return isinstance(obj, User) and self.name.lower() == obj.name.lower()
     def __hash__(self):
         return hash(self.name.lower())
+    def __str__(self):
+        return self.decl_name()
 
 
 def twit():
@@ -172,6 +181,22 @@ def leave(user):
 
 def block(user):
     return twit().block(user)
+
+
+
+class Followers(object):
+    """Static class to manage followers"""
+    followers = set()
+
+    @staticmethod
+    def update_followers():
+        return twit().list_followers(Followers.add_follower)
+
+    @staticmethod
+    def add_follower(follower):
+        name = follower.screen_name
+        Followers.followers.add(User(name))
+
 
 
 
@@ -332,6 +357,11 @@ def loop(*args):
     refresher = LoopingCall(refresh_task)
     refresher.start(interval=REFRESHDELAY, now=False).addBoth(loop)
 
+def loop_followers(*args):
+    refresher = LoopingCall(Followers.update_followers)
+    # TODO now=False
+    refresher.start(interval=REFRESHFOLLOWERS, now=True).addBoth(loop_followers)
+
 # Initialization
 @hook('startup')
 @defer.inlineCallbacks
@@ -344,5 +374,6 @@ def startup():
         pass
     
     loop()
+    loop_followers()
 
 
