@@ -15,15 +15,15 @@ Implementation of Identity/Avatar scheme.
 |    Avatar   |     |  Location   |
 +-------------+     +-------------+
 | + message() |     | + message() |
-| - identity  |     +-------------+
+| - nick      |     +-------------+
 +-------------+       ^  ^
- ^      #             |  IRCQuery
+ ^      # identity    |  IRCQuery
 IRCUser |             IRCChannel
-        |
+        | avatars
   +-----------+
   |  Identity |
   +-----------+
-  | - avatars |
+  | - docid   |
   +-----------+
 
 """
