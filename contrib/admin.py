@@ -53,9 +53,11 @@ def eval_code(event):
     admin = yield isadmin(event.source)
     if admin:
         try:
-            event.reply(eval(event.content))
+            reply = eval(event.content)
         except Exception as err: # gotta catch 'm all.
             event.reply("Error: %s" % err)
+        else:
+            event.reply("> %r" % (reply,))
 
 @register("exec")
 @defer.inlineCallbacks
