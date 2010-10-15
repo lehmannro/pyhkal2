@@ -93,6 +93,9 @@ class IRCChannel(Location):
             return user.nick in self.nicklist
         elif isinstance(user, basestring):
             return user in self.nicklist
+    def __iter__(self):
+        #XXX should return avatars
+        return iter(self.nicklist)
 
     def updateTopic(self, topic, nick, timestamp=None):
         self.topic = topic
