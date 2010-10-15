@@ -36,7 +36,7 @@ def trigger(event):
             return
         regexp, reply = random.choice(matches)
         match = regexp.sub(reply, regexp.search(event.content).group(0))
-        match = match.replace('$who', event.source.name)
+        match = match.replace('$who', event.source.nick)
         if '$someone' in match: # lazily replace
             match = match.replace('$someone', random.choice(list(event.target)))
         if match.startswith("A:"):
@@ -58,7 +58,7 @@ def factoid_add(event):
     # retrieve all what's left of the payload
     reply = lexer.instream.read().lstrip()
     factoid = yield davenport.saveDoc(dict(doctype='factoid',
-        trigger=trigger, reply=reply, creator=event.source.name))
+        trigger=trigger, reply=reply, creator=event.source.nick))
     cache(factoid['id'], trigger, reply)
 
 @register('factoidfind')
