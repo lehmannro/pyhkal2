@@ -53,7 +53,6 @@ def eval_code(event):
     admin = yield isadmin(event.source)
     if admin:
         try:
-            print event.content
             event.reply(eval(event.content))
         except Exception as err: # gotta catch 'm all.
             event.reply("Error: %s" % err)
