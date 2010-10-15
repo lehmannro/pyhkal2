@@ -45,6 +45,9 @@ class Avatar(object):
     def message(self, msg):
         raise NotImplementedError
 
+    def __str__(self):
+        return self.nick
+
 class Location(object):
     def message(self, msg):
         raise NotImplementedError
